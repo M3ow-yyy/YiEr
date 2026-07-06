@@ -1,0 +1,2559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" id="theme-color-meta" content="#4a4f56">
+    <!-- 禁用强制缓存，确保每次都能获取到最新版本 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Melancholic Desktop</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 基础重置与铺满 */
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            background-color: #2a2d34; /* 修改底色与渐变最底部一致，避免漏灰边 */
+            overflow: hidden;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-image: linear-gradient(to bottom, #4a4f56, #2a2d34);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            touch-action: none;
+            position: relative;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .app-icon {
+            background: #2c2c2e;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
+        }
+        /* Hide file inputs */
+        input[type="file"] {
+            display: none;
+        }
+        .text-shadow {
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #D98A94;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="fixed inset-0 flex flex-col px-4 pb-[24px] pt-[98px] text-white overflow-hidden overscroll-none w-screen h-screen">
+
+    <!-- 4x4 Profile Widget -->
+    <div class="relative w-full aspect-square rounded-[2.5rem] overflow-hidden shadow-lg shrink-0 mb-6 border border-white/10 mx-auto max-w-sm">
+        <!-- Top Half -->
+        <div class="absolute top-0 left-0 w-full h-[60%] group cursor-pointer bg-[#3a3d42]" onclick="document.getElementById('top-upload').click()">
+            <img id="top-img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=" class="w-full h-full object-cover transition duration-300 group-hover:brightness-75" alt="">
+            <input type="file" id="top-upload" accept="image/*" onchange="previewImage(event, 'top-img')">
+        </div>
+        <!-- Bottom Half -->
+        <div class="absolute bottom-0 left-0 w-full h-[55%] rounded-[2.5rem] overflow-hidden group cursor-pointer bg-[#3a3d42] z-0 shadow-[0_-5px_25px_rgba(0,0,0,0.3)]" onclick="document.getElementById('bottom-upload').click()">
+            <img id="bottom-img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=" class="w-full h-full object-cover transition duration-300 group-hover:brightness-75" alt="">
+            <input type="file" id="bottom-upload" accept="image/*" onchange="previewImage(event, 'bottom-img')">
+        </div>
+        
+        <!-- Avatar -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full border-[3px] border-gray-200 overflow-hidden z-10 cursor-pointer group shadow-md bg-[#ffffff]" onclick="document.getElementById('avatar-upload').click()">
+            <img id="avatar-img" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' fill='%23ffffff'/><path fill='%23cccccc' d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>" class="w-full h-full object-cover transition duration-300 group-hover:brightness-75" alt="">
+            <input type="file" id="avatar-upload" accept="image/*" onchange="previewImage(event, 'avatar-img')">
+        </div>
+
+        <!-- Text Info -->
+        <div class="absolute top-[64%] left-0 w-full flex flex-col items-center gap-0.5 z-10 text-shadow px-4">
+            <div class="text-lg font-bold cursor-pointer hover:opacity-80 transition" onclick="openDialog('nickname', '昵称', '输入新昵称')">昵称</div>
+            <div class="text-xs text-gray-200 cursor-pointer hover:opacity-80 transition" onclick="openDialog('userid', '@ID', '输入新ID')">@ID</div>
+            <div class="text-lg mt-1 cursor-pointer hover:opacity-80 transition text-center line-clamp-2" onclick="openDialog('signature', '祝你早安午安晚安', '输入新签名')">祝你早安午安晚安</div>
+            <div class="text-sm mt-1 flex items-center gap-1 cursor-pointer hover:opacity-80 transition text-gray-200" onclick="openDialog('location', 'London', '输入新位置')">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
+                <span id="location-text">London</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Middle Grid -->
+    <div class="mt-auto mb-6 grid grid-cols-4 gap-4 px-2 mx-auto w-full max-w-sm shrink-0">
+        <!-- Calendar Widget (2x2) -->
+        <div class="col-span-2 row-span-2 bg-[#F9ECEC]/95 backdrop-blur-sm border border-white/20 rounded-[2rem] p-3.5 flex flex-col shadow-lg aspect-square w-full relative overflow-hidden">
+            <div class="flex items-end justify-between mb-2 shrink-0">
+                <div class="flex items-baseline gap-1.5 cursor-pointer w-fit hover:opacity-80 transition" onclick="openCalendar()">
+                    <div class="text-4xl font-bold text-[#6D5A62] leading-none" id="cal-date"></div>
+                    <div class="flex flex-col justify-end pb-0.5">
+                        <div class="text-xs font-bold text-[#D98A94]" id="cal-month"></div>
+                        <div class="text-[9px] text-[#A89297] uppercase tracking-wider font-medium" id="cal-day"></div>
+                    </div>
+                </div>
+                <div class="text-[10px] text-[#D98A94] font-bold tracking-widest bg-[#D98A94]/10 px-2 py-1 rounded-full cursor-pointer hover:bg-[#D98A94]/20 transition" onclick="openScheduleEditorForToday()">+ 添加</div>
+            </div>
+            
+            <div class="flex-1 w-full overflow-y-auto space-y-1.5 pr-1 custom-scrollbar" id="widget-schedule-list">
+                <!-- Schedules injected via JS -->
+            </div>
+        </div>
+
+        <!-- Apps (1x1 each) -->
+        <!-- WeChat -->
+        <div class="flex flex-col items-center justify-start gap-1">
+            <div onclick="openWeChat()" class="w-[4rem] h-[4rem] app-icon rounded-[1.2rem] flex items-center justify-center glass shadow-md relative overflow-hidden cursor-pointer hover:opacity-80 transition">
+                <div class="original-icon flex items-center justify-center w-full h-full"><svg class="w-8 h-8 text-gray-300" viewBox="0 0 24 24" fill="currentColor"><path d="M8.5,13.5 C7.1,13.5 6,12.4 6,11 C6,9.6 7.1,8.5 8.5,8.5 C9.9,8.5 11,9.6 11,11 C11,12.4 9.9,13.5 8.5,13.5 Z M15.5,13.5 C14.1,13.5 13,12.4 13,11 C13,9.6 14.1,8.5 15.5,8.5 C16.9,8.5 18,9.6 18,11 C18,12.4 16.9,13.5 15.5,13.5 Z M12,3 C6.5,3 2,6.9 2,11.8 C2,14.6 3.5,17.1 5.9,18.7 C5.7,19.7 5.1,21.1 5.1,21.1 C5.1,21.1 6.8,20.5 8.3,19.7 C9.5,20.2 10.7,20.5 12,20.5 C17.5,20.5 22,16.6 22,11.8 C22,6.9 17.5,3 12,3 Z"/></svg></div>
+                <img id="app-icon-img-0" class="custom-icon hidden w-full h-full object-cover absolute inset-0">
+            </div>
+            <span class="text-[12px] text-gray-200" id="app-name-0">微信</span>
+        </div>
+        <!-- Check Phone -->
+        <div class="flex flex-col items-center justify-start gap-1">
+            <div class="w-[4rem] h-[4rem] app-icon rounded-[1.2rem] flex items-center justify-center glass shadow-md relative overflow-hidden">
+                <div class="original-icon flex items-center justify-center w-full h-full"><svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg></div>
+                <img id="app-icon-img-1" class="custom-icon hidden w-full h-full object-cover absolute inset-0">
+            </div>
+            <span class="text-[12px] text-gray-200" id="app-name-1">查手机</span>
+        </div>
+        <!-- Community (X) -->
+        <div class="flex flex-col items-center justify-start gap-1">
+            <div class="w-[4rem] h-[4rem] app-icon rounded-[1.2rem] flex items-center justify-center glass shadow-md relative overflow-hidden">
+                <div class="original-icon flex items-center justify-center w-full h-full"><svg class="w-8 h-8 text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
+                <img id="app-icon-img-2" class="custom-icon hidden w-full h-full object-cover absolute inset-0">
+            </div>
+            <span class="text-[12px] text-gray-200" id="app-name-2">社区</span>
+        </div>
+        <!-- Diary -->
+        <div class="flex flex-col items-center justify-start gap-1">
+            <div class="w-[4rem] h-[4rem] app-icon rounded-[1.2rem] flex items-center justify-center glass shadow-md relative overflow-hidden">
+                <div class="original-icon flex items-center justify-center w-full h-full"><svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg></div>
+                <img id="app-icon-img-3" class="custom-icon hidden w-full h-full object-cover absolute inset-0">
+            </div>
+            <span class="text-[12px] text-gray-200" id="app-name-3">日记</span>
+        </div>
+    </div>
+
+    <!-- Dock -->
+    <div class="mb-4 mx-auto glass rounded-[2rem] p-4 flex gap-8 shadow-2xl border border-white/20 shrink-0">
+        <!-- Messages -->
+        <div class="flex flex-col items-center justify-start gap-1">
+            <div class="w-[4rem] h-[4rem] app-icon rounded-[1.2rem] flex items-center justify-center glass shadow-md relative overflow-hidden">
+                <div class="original-icon flex items-center justify-center w-full h-full"><svg class="w-8 h-8 text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg></div>
+                <img id="app-icon-img-4" class="custom-icon hidden w-full h-full object-cover absolute inset-0">
+            </div>
+            <span class="text-[12px] text-gray-200 hidden" id="app-name-4">短信</span>
+        </div>
+        <!-- Phone -->
+        <div class="flex flex-col items-center justify-start gap-1">
+            <div class="w-[4rem] h-[4rem] app-icon rounded-[1.2rem] flex items-center justify-center glass shadow-md relative overflow-hidden">
+                <div class="original-icon flex items-center justify-center w-full h-full"><svg class="w-8 h-8 text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"></path></svg></div>
+                <img id="app-icon-img-5" class="custom-icon hidden w-full h-full object-cover absolute inset-0">
+            </div>
+            <span class="text-[12px] text-gray-200 hidden" id="app-name-5">电话</span>
+        </div>
+        <!-- Settings -->
+        <div class="flex flex-col items-center justify-start gap-1">
+            <div onclick="openSettings()" class="w-[4rem] h-[4rem] app-icon rounded-[1.2rem] flex items-center justify-center glass shadow-md cursor-pointer hover:opacity-80 transition relative overflow-hidden">
+                <div class="original-icon flex items-center justify-center w-full h-full"><svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></div>
+                <img id="app-icon-img-6" class="custom-icon hidden w-full h-full object-cover absolute inset-0">
+            </div>
+            <span class="text-[12px] text-gray-200 hidden" id="app-name-6">设置</span>
+        </div>
+    </div>
+
+    <!-- Calendar App Overlay -->
+    <div id="calendar-app" class="fixed inset-0 w-full h-full overscroll-none bg-[#f4f4f5] z-40 hidden flex-col transition-transform duration-300 translate-y-full text-gray-800">
+        <div class="pt-[72px] pb-4 px-6 flex justify-between items-center bg-white shadow-sm shrink-0">
+            <button onclick="closeCalendar()" class="text-blue-500 font-medium hover:opacity-80">返回</button>
+            <h2 id="calendar-header" class="text-lg font-bold"></h2>
+            <button class="text-blue-500 font-medium opacity-0 cursor-default">添加</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 max-w-sm mx-auto w-full">
+            <div class="flex justify-between items-center mb-6 px-2 mt-4">
+                <button onclick="changeMonth(-1)" class="p-2 bg-gray-200 rounded-full text-gray-600 hover:bg-gray-300 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <div class="text-sm text-gray-500 font-medium">点击日期添加日程</div>
+                <button onclick="changeMonth(1)" class="p-2 bg-gray-200 rounded-full text-gray-600 hover:bg-gray-300 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+            <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-gray-400 mb-2 font-bold tracking-wider">
+                <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
+            </div>
+            <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center">
+                <!-- Days injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Day Schedule List Dialog -->
+    <div id="day-list-overlay" class="fixed inset-0 w-full h-full bg-black/50 backdrop-blur-sm z-50 hidden flex flex-col justify-end opacity-0 transition-opacity duration-300">
+        <div class="bg-[#f4f4f5] w-full max-w-md mx-auto rounded-t-[2rem] p-6 shadow-2xl transform translate-y-full transition-transform duration-300 h-[60vh] flex flex-col" id="day-list-box">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h3 id="day-list-title" class="text-gray-800 font-bold text-lg">行程</h3>
+                <button onclick="closeDayList()" class="text-gray-400 hover:text-gray-800 transition p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="day-list-content" class="flex-1 overflow-y-auto flex flex-col gap-3 mb-4">
+                <!-- List items injected here -->
+            </div>
+            <button onclick="openScheduleEditor()" class="w-full bg-pink-400 text-white rounded-[1.5rem] py-3.5 font-bold hover:bg-pink-500 transition shadow-md shrink-0">添加行程</button>
+        </div>
+    </div>
+
+    <!-- Schedule Editor Dialog -->
+    <div id="schedule-edit-overlay" class="fixed inset-0 w-full h-full bg-black/50 backdrop-blur-sm z-[60] hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-[#fff9f9] w-4/5 max-w-sm rounded-[2rem] p-6 shadow-2xl transform scale-95 transition-transform duration-300" id="schedule-edit-box">
+            <h3 id="schedule-edit-title" class="text-gray-800 font-bold text-lg mb-4 text-center">编辑行程</h3>
+            
+            <div class="mb-4">
+                <label class="block text-xs text-gray-500 mb-2 font-medium">选择或输入图标</label>
+                <div class="flex gap-3 items-center mb-3">
+                    <input type="text" id="custom-emoji-input" class="w-12 h-10 text-center text-xl bg-gray-100 rounded-[0.8rem] outline-none focus:ring-2 focus:ring-pink-300 shadow-inner" maxlength="2" value="📌" oninput="updateCustomEmoji(this.value)">
+                    <span class="text-xs text-gray-400">← 可直接输入其他Emoji</span>
+                </div>
+                <div class="grid grid-cols-6 gap-2 text-xl" id="emoji-picker">
+                    <!-- Emojis injected via JS -->
+                </div>
+            </div>
+
+            <textarea id="schedule-input" class="w-full bg-gray-100 border-none rounded-[1.5rem] px-4 py-3 text-gray-800 focus:ring-2 focus:ring-pink-300 outline-none mb-6 text-center shadow-inner resize-none" rows="2" placeholder="行程内容"></textarea>
+            
+            <div class="flex justify-between gap-3">
+                <button onclick="deleteSchedule()" id="btn-delete-schedule" class="flex-1 bg-red-100 text-red-500 rounded-full py-2.5 font-bold hover:bg-red-200 transition hidden">删除</button>
+                <button onclick="closeScheduleEditor()" class="flex-1 bg-gray-200 text-gray-600 rounded-full py-2.5 font-bold hover:bg-gray-300 transition">取消</button>
+                <button onclick="saveSchedule()" class="flex-1 bg-pink-400 text-white rounded-full py-2.5 font-bold hover:bg-pink-500 transition shadow-md">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- WeChat App Overlay -->
+    <div id="wechat-app" class="fixed inset-0 w-full h-full bg-[#ededed] z-40 hidden flex-col transition-transform duration-300 translate-y-full overscroll-none text-black">
+        <!-- Header & Search -->
+        <div class="bg-[#ededed] shrink-0 pt-[44px] flex flex-col relative z-20">
+            <!-- Header -->
+            <div class="relative flex items-center justify-center h-[44px] px-4">
+                <!-- 隐形的返回区域，点击左上角即可退出微信 -->
+                <button onclick="closeWeChat()" class="absolute left-0 top-0 w-16 h-full bg-transparent z-10"></button>
+                
+                <h1 id="wechat-header-title" class="text-[17px] font-medium tracking-wide">微信</h1>
+                
+                <button onclick="toggleWechatAddMenu()" class="absolute right-4 p-1 text-gray-800 hover:opacity-70 transition">
+                    <!-- 微信右上角加号 -->
+                    <svg id="wechat-header-add-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg>
+                    <!-- 通讯录右上角添加好友 -->
+                    <svg id="wechat-header-friend-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18 8v6m3-3h-6m-5 1a4 4 0 110-8 4 4 0 010 8zm-7 9a7 7 0 0114 0H3z" /></svg>
+                </button>
+
+                <!-- Add Menu Dropdown -->
+                <div id="wechat-add-menu" class="absolute top-[44px] right-2 bg-[#4c4c4c] text-white rounded-[6px] w-36 hidden flex-col shadow-lg overflow-hidden z-50">
+                    <div class="px-4 py-3 text-[15px] border-b border-gray-600/50 cursor-pointer active:bg-gray-600 flex items-center gap-3" onclick="openCreateGroupPage()">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                        发起群聊
+                    </div>
+                    <div class="px-4 py-3 text-[15px] cursor-pointer active:bg-gray-600 flex items-center gap-3" onclick="openAddFriendPage()">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9 2V9h2V7H6V5H4v2H2v2h2v2h2v2zm13-2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        添加朋友
+                    </div>
+                </div>
+            </div>
+            <!-- Search Bar -->
+            <div class="px-2 pb-2.5 pt-1" id="wechat-search-bar">
+                <div class="bg-white rounded-[6px] h-[36px] flex items-center justify-center gap-1.5 text-[#b2b2b2] cursor-text">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 12.51 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 12.51 14 9.5 14z"></path></svg>
+                    <span class="text-[16px] tracking-wide">搜索</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area: Tab 1 微信 -->
+        <div class="flex-grow bg-[#ffffff] overflow-y-auto w-full custom-scrollbar relative z-10 block" id="wechat-tab-1">
+            <!-- Dynamic Chat Lists can be added here -->
+            <div class="h-full flex flex-col"></div>
+        </div>
+
+        <!-- Main Content Area: Tab 3 发现 -->
+        <div class="flex-grow bg-[#ededed] overflow-y-auto w-full custom-scrollbar relative z-10 hidden" id="wechat-tab-3">
+            <div class="flex flex-col py-2">
+                <!-- 朋友圈 -->
+                <div class="bg-white flex items-center justify-between px-4 py-3.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <div class="w-7 h-7 flex items-center justify-center shrink-0">
+                            <svg class="w-6 h-6 text-[#1E90FF]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z"/></svg>
+                        </div>
+                        <span class="text-[16px] text-gray-900 tracking-wide">朋友圈</span>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+
+                <div class="h-2"></div> <!-- Spacer -->
+
+                <div class="bg-white flex flex-col">
+                    <!-- 世界书 -->
+                    <div class="flex items-center justify-between px-4 py-3.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <div class="w-7 h-7 flex items-center justify-center shrink-0">
+                                <svg class="w-6 h-6 text-[#FFA500]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                            </div>
+                            <span class="text-[16px] text-gray-900 tracking-wide">世界书</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                    <!-- Char -->
+                    <div class="flex items-center justify-between px-4 py-3.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer" onclick="openCharPage()">
+                        <div class="flex items-center gap-3">
+                            <div class="w-7 h-7 flex items-center justify-center shrink-0">
+                                <svg class="w-6 h-6 text-[#FF69B4]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                            </div>
+                            <span class="text-[16px] text-gray-900 tracking-wide">Char</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                    <!-- IF -->
+                    <div class="flex items-center justify-between px-4 py-3.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <div class="w-7 h-7 flex items-center justify-center shrink-0">
+                                <svg class="w-6 h-6 text-[#8A2BE2]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            </div>
+                            <span class="text-[16px] text-gray-900 tracking-wide">IF</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                    <!-- 记账 -->
+                    <div class="flex items-center justify-between px-4 py-3.5 active:bg-gray-100 transition cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <div class="w-7 h-7 flex items-center justify-center shrink-0">
+                                <svg class="w-6 h-6 text-[#32CD32]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <span class="text-[16px] text-gray-900 tracking-wide">记账</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area: Tab 4 我 -->
+        <div class="flex-grow bg-[#ededed] overflow-y-auto w-full custom-scrollbar relative z-10 hidden" id="wechat-tab-4">
+            <div class="flex flex-col pb-6">
+                <!-- Profile Section -->
+                <div class="bg-white pt-12 pb-8 px-6 flex items-start gap-5 cursor-pointer" onclick="openMeProfilePage()">
+                    <div class="w-16 h-16 rounded-[8px] overflow-hidden bg-gray-200 shrink-0">
+                        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=" class="w-full h-full object-cover" id="wechat-me-avatar">
+                    </div>
+                    <div class="flex flex-col flex-1 mt-0.5">
+                        <h2 class="text-xl font-medium text-black" id="wechat-me-name">用户</h2>
+                        <div class="flex items-center justify-between mt-1.5">
+                            <span class="text-[15px] text-gray-500" id="wechat-me-id">微信号：12345Q</span>
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M4 4h4v4H4V4zm6 0h4v4h-4V4zM4 10h4v4H4v-4zm6 0h4v4h-4v-4zM4 16h4v4H4v-4zm6 0h4v4h-4v-4zm6-12h4v4h-4V4zm0 6h4v4h-4v-4zm0 6h4v4h-4v-4z"/></svg>
+                                <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 mt-4">
+                            <div class="flex items-center gap-0.5 border border-gray-200 rounded-full px-2.5 py-0.5 text-xs text-gray-500">
+                                <span>+</span>
+                                <span>状态</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="h-2"></div>
+                <!-- 服务 -->
+                <div class="bg-white flex items-center justify-between px-4 py-3.5 active:bg-gray-100 transition cursor-pointer">
+                    <div class="flex items-center gap-4">
+                        <svg class="w-6 h-6 text-[#2E8B57]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span class="text-[16px] text-gray-900 tracking-wide">服务</span>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+
+                <div class="h-2"></div>
+                <!-- 收藏 -->
+                <div class="bg-white flex flex-col">
+                    <div class="flex items-center justify-between px-4 py-3.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                        <div class="flex items-center gap-4">
+                            <svg class="w-6 h-6 text-[#FFA500]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                            <span class="text-[16px] text-gray-900 tracking-wide">收藏</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                    <!-- 朋友圈 -->
+                    <div class="flex items-center justify-between px-4 py-3.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                        <div class="flex items-center gap-4">
+                            <svg class="w-6 h-6 text-[#4169E1]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <span class="text-[16px] text-gray-900 tracking-wide">朋友圈</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                    <!-- 作品 -->
+                    <div class="flex items-center justify-between px-4 py-3.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                        <div class="flex items-center gap-4">
+                            <svg class="w-6 h-6 text-[#87CEEB]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                            <span class="text-[16px] text-gray-900 tracking-wide">作品</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                    <!-- 面具 -->
+                    <div class="flex items-center justify-between px-4 py-3.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer" onclick="openMaskPage()">
+                        <div class="flex items-center gap-4">
+                            <svg class="w-6 h-6 text-[#FF6347]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span class="text-[16px] text-gray-900 tracking-wide">面具</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                    <!-- 表情 -->
+                    <div class="flex items-center justify-between px-4 py-3.5 active:bg-gray-100 transition cursor-pointer">
+                        <div class="flex items-center gap-4">
+                            <svg class="w-6 h-6 text-[#FFD700]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span class="text-[16px] text-gray-900 tracking-wide">表情</span>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+
+                <div class="h-2"></div>
+                <!-- 设置 -->
+                <div class="bg-white flex items-center justify-between px-4 py-3.5 active:bg-gray-100 transition cursor-pointer">
+                    <div class="flex items-center gap-4">
+                        <svg class="w-6 h-6 text-[#4682B4]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <span class="text-[16px] text-gray-900 tracking-wide">设置</span>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area: Tab 2 通讯录 -->
+        <div class="flex-grow bg-[#ffffff] overflow-y-auto w-full custom-scrollbar relative z-10 hidden" id="wechat-tab-2">
+            <div class="flex flex-col">
+                <!-- 新的朋友 -->
+                <div class="flex items-center px-4 py-2.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                    <div class="w-10 h-10 rounded-[6px] bg-[#FA9D3B] flex items-center justify-center shrink-0">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9 2V9h2V7H6V5H4v2H2v2h2v2h2v2zm13-2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                    <span class="ml-4 text-[16px] text-gray-900 tracking-wide">新的朋友</span>
+                </div>
+                <!-- 仅聊天的朋友 -->
+                <div class="flex items-center px-4 py-2.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                    <div class="w-10 h-10 rounded-[6px] bg-[#FA9D3B] flex items-center justify-center shrink-0">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                    <span class="ml-4 text-[16px] text-gray-900 tracking-wide">仅聊天的朋友</span>
+                </div>
+                <!-- 群聊 -->
+                <div class="flex items-center px-4 py-2.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                    <div class="w-10 h-10 rounded-[6px] bg-[#07c160] flex items-center justify-center shrink-0">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                    </div>
+                    <span class="ml-4 text-[16px] text-gray-900 tracking-wide">群聊</span>
+                </div>
+                <!-- 标签 -->
+                <div class="flex items-center px-4 py-2.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                    <div class="w-10 h-10 rounded-[6px] bg-[#2782D7] flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM13 20.01L4 11V4h7v-.01l9 9-7 7.02z"/><circle cx="7.25" cy="7.25" r="1.25"/></svg>
+                    </div>
+                    <span class="ml-4 text-[16px] text-gray-900 tracking-wide">标签</span>
+                </div>
+                <!-- 公众号 -->
+                <div class="flex items-center px-4 py-2.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                    <div class="w-10 h-10 rounded-[6px] bg-[#2782D7] flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 11c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm0 2c1.93 0 3.5-1.57 3.5-3.5S13.93 6 12 6 8.5 7.57 8.5 9.5 10.07 13 12 13zm0 2c-2.33 0-7 1.17-7 3.5V20h14v-1.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                    </div>
+                    <span class="ml-4 text-[16px] text-gray-900 tracking-wide">公众号</span>
+                </div>
+                <!-- 服务号 -->
+                <div class="flex items-center px-4 py-2.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                    <div class="w-10 h-10 rounded-[6px] bg-[#499CED] flex items-center justify-center shrink-0">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22l-4-4v-4H4v-4h4V6l4-4 4 4v4h4v4h-4v4z"/></svg>
+                    </div>
+                    <span class="ml-4 text-[16px] text-gray-900 tracking-wide">服务号</span>
+                </div>
+                <!-- 企业微信联系人 -->
+                <div class="flex items-center px-4 py-2.5 active:bg-gray-100 transition cursor-pointer border-b border-[#f0f0f0]">
+                    <div class="w-10 h-10 rounded-[6px] bg-[#337CC4] flex items-center justify-center shrink-0">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 12H7v-2h10v2zm0-3H7V9h10v2zm0-3H7V6h10v2z"/></svg>
+                    </div>
+                    <span class="ml-4 text-[16px] text-gray-900 tracking-wide">企业微信联系人</span>
+                </div>
+
+                <!-- Dynamic Contacts List injected here -->
+                <div id="wechat-contacts-list" class="flex flex-col pb-6"></div>
+            </div>
+
+            <!-- Right Sidebar Index -->
+            <div class="fixed right-0 top-[150px] bottom-[100px] w-6 flex flex-col justify-center items-center text-[10px] text-gray-500 font-medium z-20 gap-[2px]">
+                <span>↑</span><span>☆</span><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span><span>K</span><span>L</span><span>M</span><span>N</span><span>O</span><span>P</span><span>Q</span><span>R</span><span>S</span><span>T</span><span>U</span><span>V</span><span>W</span><span>X</span><span>Y</span><span>Z</span><span>#</span>
+            </div>
+        </div>
+
+        <!-- Add Friend Page -->
+        <div id="wechat-add-friend-page" class="absolute inset-0 w-full h-full bg-[#ededed] z-30 hidden flex-col transition-transform duration-300 translate-x-full">
+            <div class="bg-[#ededed] shrink-0 pt-[44px] flex flex-col relative z-20">
+                <div class="relative flex items-center justify-center h-[44px] px-4">
+                    <button onclick="closeAddFriendPage()" class="absolute left-0 top-0 h-full px-4 flex items-center gap-1 text-gray-800">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h1 class="text-[17px] font-medium tracking-wide">选择Char添加好友</h1>
+                </div>
+            </div>
+            <div class="flex-grow overflow-y-auto bg-white" id="add-friend-list-container">
+                <!-- list injected here -->
+            </div>
+        </div>
+
+        <!-- Me Profile Page -->
+        <div id="wechat-me-profile-page" class="absolute inset-0 w-full h-full bg-[#ededed] z-40 hidden flex-col transition-transform duration-300 translate-x-full">
+            <!-- Header -->
+            <div class="bg-[#ededed] shrink-0 pt-[44px] flex flex-col relative z-20">
+                <div class="relative flex items-center justify-center h-[44px] px-4">
+                    <button onclick="closeMeProfilePage()" class="absolute left-0 top-0 h-full px-4 flex items-center gap-1 text-gray-800">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h1 class="text-[17px] font-medium tracking-wide">个人信息</h1>
+                    <button onclick="saveMeProfile()" class="absolute right-4 p-1 text-[#07c160] font-medium transition">
+                        保存
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Form -->
+            <div class="flex-grow overflow-y-auto custom-scrollbar flex flex-col gap-2 py-2">
+                <div class="bg-white px-4 py-3 flex items-center justify-between cursor-pointer active:bg-gray-50" onclick="document.getElementById('me-avatar-upload').click()">
+                    <span class="text-[16px] text-gray-900">头像</span>
+                    <div class="flex items-center gap-3">
+                        <div class="w-14 h-14 bg-gray-200 rounded-md overflow-hidden flex items-center justify-center relative">
+                            <img id="me-avatar-preview" class="w-full h-full object-cover" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=">
+                            <input type="file" id="me-avatar-upload" class="hidden" accept="image/*" onchange="previewMeAvatar(event)">
+                        </div>
+                        <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                    </div>
+                </div>
+                
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-[#f0f0f0]">
+                    <span class="text-[16px] text-gray-900 w-20">名字</span>
+                    <input type="text" id="me-name-input" class="flex-1 text-right outline-none text-[16px] text-gray-500" placeholder="用户">
+                </div>
+                
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-[#f0f0f0]">
+                    <span class="text-[16px] text-gray-900 w-20">微信号</span>
+                    <input type="text" id="me-wechat-input" class="flex-1 text-right outline-none text-[16px] text-gray-500" placeholder="12345Q">
+                </div>
+
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-[#f0f0f0]">
+                    <span class="text-[16px] text-gray-900 w-20">拍一拍</span>
+                    <input type="text" id="me-tickle-input" class="flex-1 text-right outline-none text-[16px] text-gray-500" placeholder="拍了拍我">
+                </div>
+
+                <div class="h-2 bg-[#ededed]"></div>
+
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-[#f0f0f0]">
+                    <span class="text-[16px] text-gray-900 w-20">性别</span>
+                    <select id="me-gender-select" class="flex-1 text-right outline-none text-[16px] text-gray-500 bg-transparent appearance-none dir-rtl" style="direction: rtl;">
+                        <option value="女">女</option>
+                        <option value="男">男</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-[#f0f0f0]">
+                    <span class="text-[16px] text-gray-900 w-20">地区</span>
+                    <input type="text" id="me-region-input" class="flex-1 text-right outline-none text-[16px] text-gray-500" placeholder="输入地区">
+                </div>
+
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-[#f0f0f0]">
+                    <span class="text-[16px] text-gray-900 w-20">签名</span>
+                    <input type="text" id="me-signature-input" class="flex-1 text-right outline-none text-[16px] text-gray-500" placeholder="个性签名">
+                </div>
+
+                <div class="bg-white px-4 py-3 flex items-center justify-between">
+                    <span class="text-[16px] text-gray-900 w-20">面具</span>
+                    <input type="text" id="me-mask-input" class="flex-1 text-right outline-none text-[16px] text-gray-500" placeholder="选择或输入面具名称">
+                </div>
+                
+                <div class="mt-8 px-4 flex flex-col gap-3 pb-8">
+                    <button class="w-full bg-white text-gray-900 py-3 rounded-[6px] text-[16px] font-medium active:bg-gray-100 transition border border-gray-200" onclick="alert('切换账号功能暂未开放')">切换账号</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Group Page -->
+        <div id="wechat-create-group-page" class="absolute inset-0 w-full h-full bg-[#ededed] z-30 hidden flex-col transition-transform duration-300 translate-x-full">
+            <div class="bg-[#ededed] shrink-0 pt-[44px] flex flex-col relative z-20">
+                <div class="relative flex items-center justify-center h-[44px] px-4">
+                    <button onclick="closeCreateGroupPage()" class="absolute left-0 top-0 h-full px-4 flex items-center gap-1 text-gray-800">
+                        取消
+                    </button>
+                    <h1 class="text-[17px] font-medium tracking-wide">发起群聊</h1>
+                    <button onclick="submitCreateGroup()" class="absolute right-4 p-1 text-[#07c160] font-medium transition" id="btn-create-group">
+                        完成
+                    </button>
+                </div>
+            </div>
+            <div class="bg-[#ededed] px-4 py-2 text-[13px] text-gray-500 font-medium">选择联系人</div>
+            <div class="flex-grow overflow-y-auto bg-white" id="create-group-list-container">
+                <!-- list injected here -->
+            </div>
+        </div>
+
+        <!-- Char Page -->
+        <div id="wechat-char-page" class="absolute inset-0 w-full h-full bg-[#ededed] z-30 hidden flex-col transition-transform duration-300 translate-x-full">
+            <!-- Header -->
+            <div class="bg-[#ededed] shrink-0 pt-[44px] flex flex-col relative z-20">
+                <div class="relative flex items-center justify-center h-[44px] px-4">
+                    <button onclick="closeCharPage()" class="absolute left-0 top-0 h-full px-4 flex items-center gap-1 text-gray-800">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h1 class="text-[17px] font-medium tracking-wide">Char</h1>
+                    <button onclick="toggleCharMenu()" class="absolute right-4 p-1 text-gray-800 hover:opacity-70 transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
+                    </button>
+                    
+                    <!-- Menu Dropdown -->
+                    <div id="char-menu-dropdown" class="absolute top-[44px] right-2 bg-[#4c4c4c] text-white rounded-[6px] w-32 hidden flex-col shadow-lg overflow-hidden z-50">
+                        <div class="px-4 py-3 text-[15px] border-b border-gray-600/50 cursor-pointer active:bg-gray-600" onclick="openCharEditPage()">添加角色</div>
+                        <div class="px-4 py-3 text-[15px] cursor-pointer active:bg-gray-600" onclick="toggleCharManageMode()">管理角色</div>
+                    </div>
+                </div>
+            </div>
+            <!-- List -->
+            <div class="flex-grow overflow-y-auto bg-white" id="char-list-container">
+                <!-- list items injected here -->
+            </div>
+            <!-- Manage Mode Footer -->
+            <div id="char-manage-footer" class="shrink-0 h-[83px] bg-[#f7f7f7] border-t border-[rgba(0,0,0,0.05)] hidden justify-center items-start pt-3">
+                <button onclick="deleteSelectedChars()" class="text-red-500 font-medium text-[16px]">删除所选</button>
+            </div>
+        </div>
+
+        <!-- Char Edit Overlay -->
+        <div id="wechat-char-edit-page" class="absolute inset-0 w-full h-full bg-[#ededed] z-40 hidden flex-col transition-transform duration-300 translate-x-full">
+            <!-- Header -->
+            <div class="bg-[#ededed] shrink-0 pt-[44px] flex flex-col relative z-20">
+                <div class="relative flex items-center justify-center h-[44px] px-4">
+                    <button onclick="closeCharEditPage()" class="absolute left-0 top-0 h-full px-4 flex items-center gap-1 text-gray-800">
+                        取消
+                    </button>
+                    <h1 class="text-[17px] font-medium tracking-wide" id="char-edit-title">添加角色</h1>
+                </div>
+            </div>
+            <!-- Form -->
+            <div class="flex-grow overflow-y-auto custom-scrollbar flex flex-col gap-2 py-2">
+                <div class="bg-white px-4 py-3 flex items-center justify-between">
+                    <span class="text-[16px] text-gray-900">头像</span>
+                    <div class="w-14 h-14 bg-gray-200 rounded-md overflow-hidden cursor-pointer flex items-center justify-center relative" onclick="document.getElementById('char-avatar-upload').click()">
+                        <img id="char-avatar-preview" class="w-full h-full object-cover hidden">
+                        <span class="text-xs text-gray-400" id="char-avatar-placeholder">上传</span>
+                        <input type="file" id="char-avatar-upload" class="hidden" accept="image/*" onchange="previewCharAvatar(event)">
+                    </div>
+                </div>
+                
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-[#f0f0f0]">
+                    <span class="text-[16px] text-gray-900 w-16">名字</span>
+                    <input type="text" id="char-name-input" class="flex-1 text-right outline-none text-[16px] text-gray-700" placeholder="请输入名字">
+                </div>
+                
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-[#f0f0f0]">
+                    <span class="text-[16px] text-gray-900 w-16">微信号</span>
+                    <input type="text" id="char-wechat-input" class="flex-1 text-right outline-none text-[16px] text-gray-700" placeholder="微信号">
+                    <button onclick="generateWechatId()" class="ml-3 px-2 py-1 bg-gray-100 rounded text-xs text-blue-500 font-medium active:bg-gray-200">随机</button>
+                </div>
+
+                <div class="bg-white px-4 py-3 flex flex-col gap-2">
+                    <span class="text-[16px] text-gray-900">个人信息</span>
+                    <textarea id="char-info-input" class="w-full bg-gray-50 rounded p-2 outline-none text-[15px] text-gray-700 resize-none" rows="5" placeholder="输入角色的个人信息..."></textarea>
+                </div>
+                
+                <div class="mt-6 px-4 flex flex-col gap-3 pb-8">
+                    <button onclick="saveChar()" class="w-full bg-[#07c160] text-white py-3 rounded-[6px] text-[16px] font-medium active:bg-[#06ad56] transition">保存角色</button>
+                    <button id="char-delete-btn" onclick="deleteCurrentChar()" class="w-full bg-white text-red-500 py-3 rounded-[6px] text-[16px] font-medium active:bg-gray-100 transition hidden border border-gray-100">删除角色</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mask Page -->
+        <div id="wechat-mask-page" class="absolute inset-0 w-full h-full bg-[#ededed] z-30 hidden flex-col transition-transform duration-300 translate-x-full">
+            <!-- Header -->
+            <div class="bg-[#ededed] shrink-0 pt-[44px] flex flex-col relative z-20">
+                <div class="relative flex items-center justify-center h-[44px] px-4">
+                    <button onclick="closeMaskPage()" class="absolute left-0 top-0 h-full px-4 flex items-center gap-1 text-gray-800">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h1 class="text-[17px] font-medium tracking-wide">面具</h1>
+                    <button onclick="toggleMaskMenu()" class="absolute right-4 p-1 text-gray-800 hover:opacity-70 transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
+                    </button>
+                    
+                    <!-- Menu Dropdown -->
+                    <div id="mask-menu-dropdown" class="absolute top-[44px] right-2 bg-[#4c4c4c] text-white rounded-[6px] w-32 hidden flex-col shadow-lg overflow-hidden z-50">
+                        <div class="px-4 py-3 text-[15px] border-b border-gray-600/50 cursor-pointer active:bg-gray-600" onclick="openMaskEditPage()">添加面具</div>
+                        <div class="px-4 py-3 text-[15px] cursor-pointer active:bg-gray-600" onclick="toggleMaskManageMode()">管理面具</div>
+                    </div>
+                </div>
+            </div>
+            <!-- List -->
+            <div class="flex-grow overflow-y-auto bg-white" id="mask-list-container">
+                <!-- list items injected here -->
+            </div>
+            <!-- Manage Mode Footer -->
+            <div id="mask-manage-footer" class="shrink-0 h-[83px] bg-[#f7f7f7] border-t border-[rgba(0,0,0,0.05)] hidden justify-center items-start pt-3">
+                <button onclick="deleteSelectedMasks()" class="text-red-500 font-medium text-[16px]">删除所选</button>
+            </div>
+        </div>
+
+        <!-- Mask Edit Overlay -->
+        <div id="wechat-mask-edit-page" class="absolute inset-0 w-full h-full bg-[#ededed] z-40 hidden flex-col transition-transform duration-300 translate-x-full">
+            <!-- Header -->
+            <div class="bg-[#ededed] shrink-0 pt-[44px] flex flex-col relative z-20">
+                <div class="relative flex items-center justify-center h-[44px] px-4">
+                    <button onclick="closeMaskEditPage()" class="absolute left-0 top-0 h-full px-4 flex items-center gap-1 text-gray-800">
+                        取消
+                    </button>
+                    <h1 class="text-[17px] font-medium tracking-wide" id="mask-edit-title">添加面具</h1>
+                </div>
+            </div>
+            <!-- Form -->
+            <div class="flex-grow overflow-y-auto custom-scrollbar flex flex-col gap-2 py-2">
+                <div class="bg-white px-4 py-3 flex items-center justify-between">
+                    <span class="text-[16px] text-gray-900">头像</span>
+                    <div class="w-14 h-14 bg-gray-200 rounded-md overflow-hidden cursor-pointer flex items-center justify-center relative" onclick="document.getElementById('mask-avatar-upload').click()">
+                        <img id="mask-avatar-preview" class="w-full h-full object-cover hidden">
+                        <span class="text-xs text-gray-400" id="mask-avatar-placeholder">上传</span>
+                        <input type="file" id="mask-avatar-upload" class="hidden" accept="image/*" onchange="previewMaskAvatar(event)">
+                    </div>
+                </div>
+                
+                <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-[#f0f0f0]">
+                    <span class="text-[16px] text-gray-900 w-16">名字</span>
+                    <input type="text" id="mask-name-input" class="flex-1 text-right outline-none text-[16px] text-gray-700" placeholder="请输入名字">
+                </div>
+
+                <div class="bg-white px-4 py-3 flex flex-col gap-2">
+                    <span class="text-[16px] text-gray-900">个人信息</span>
+                    <textarea id="mask-info-input" class="w-full bg-gray-50 rounded p-2 outline-none text-[15px] text-gray-700 resize-none" rows="5" placeholder="输入面具的个人信息..."></textarea>
+                </div>
+                
+                <div class="mt-6 px-4 flex flex-col gap-3 pb-8">
+                    <button onclick="saveMask()" class="w-full bg-[#07c160] text-white py-3 rounded-[6px] text-[16px] font-medium active:bg-[#06ad56] transition">保存面具</button>
+                    <button id="mask-delete-btn" onclick="deleteCurrentMask()" class="w-full bg-white text-red-500 py-3 rounded-[6px] text-[16px] font-medium active:bg-gray-100 transition hidden border border-gray-100">删除面具</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Tab Bar -->
+        <div class="shrink-0 h-[83px] bg-[#f7f7f7] border-t border-[rgba(0,0,0,0.05)] flex justify-between px-6 pt-1.5 pb-6 relative z-20">
+            <!-- 微信 -->
+            <div onclick="switchWeChatTab(1)" class="flex flex-col items-center justify-start w-16 cursor-pointer opacity-100 transition" id="wechat-tab-btn-1">
+                <div class="w-[28px] h-[28px] flex items-center justify-center text-[#07c160]" id="wechat-tab-icon-1">
+                    <!-- Active -->
+                    <svg class="w-full h-full block active-icon" viewBox="0 0 1024 1024" fill="currentColor"><path d="M374.9 660.4c-9.7 0-19.1-1.3-28.1-3.6-70.5-17.7-124.9-63.5-144-121.2-5.4-16.4-8.2-33.8-8.2-51.8 0-82.6 77-149.6 172-149.6 95 0 172 67 172 149.6 0 82.6-77 149.6-172 149.6-10.7 0-21.1-0.8-31.2-2.4l-48.4 29.8 14-38.3c-8.7-4.8-17-10.1-24.9-15.9l-1.2-6.2zM805 528.2c0-82.6-77-149.6-172-149.6-95 0-172 67-172 149.6 0 82.6 77 149.6 172 149.6 10.7 0 21.1-0.8 31.2-2.4l48.4 29.8-14-38.3c15.2-8.3 29.1-18.4 41.2-30 24.3-23.2 41.4-51.2 49-81.8 4.2-16.7 6.2-34.3 6.2-52.4z"></path></svg>
+                    <!-- Inactive -->
+                    <svg class="w-[24px] h-[24px] hidden inactive-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                </div>
+                <span class="text-[10px] text-[#07c160] mt-0.5 font-medium tracking-wide" id="wechat-tab-text-1">微信</span>
+            </div>
+            <!-- 通讯录 -->
+            <div onclick="switchWeChatTab(2)" class="flex flex-col items-center justify-start w-16 cursor-pointer opacity-80 hover:opacity-100 transition" id="wechat-tab-btn-2">
+                <div class="w-[28px] h-[28px] flex items-center justify-center text-gray-800" id="wechat-tab-icon-2">
+                    <!-- Active -->
+                    <svg class="w-[24px] h-[24px] hidden active-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M10 12a4 4 0 100-8 4 4 0 000 8zm-6 8a6 6 0 0112 0h-12zM16 7h5v2h-5zM16 11h5v2h-5zM16 15h5v2h-5z" /></svg>
+                    <!-- Inactive -->
+                    <svg class="w-[24px] h-[24px] block inactive-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 11h5m-5-4h5m-5 8h5M10 12a4 4 0 100-8 4 4 0 000 8zm-6 8a6 6 0 0112 0"></path></svg>
+                </div>
+                <span class="text-[10px] text-gray-800 mt-0.5 font-medium tracking-wide" id="wechat-tab-text-2">通讯录</span>
+            </div>
+            <!-- 发现 -->
+            <div onclick="switchWeChatTab(3)" class="flex flex-col items-center justify-start w-16 cursor-pointer relative opacity-80 hover:opacity-100 transition" id="wechat-tab-btn-3">
+                <div class="w-[28px] h-[28px] flex items-center justify-center text-gray-800" id="wechat-tab-icon-3">
+                    <!-- Active -->
+                    <svg class="w-[24px] h-[24px] hidden active-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.49 8.01l-1.89 5.66a.998.998 0 01-.58.58l-5.66 1.89a.998.998 0 01-1.29-1.29l1.89-5.66a.998.998 0 01.58-.58l5.66-1.89a.998.998 0 011.29 1.29zM12 13.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"></path></svg>
+                    <!-- Inactive -->
+                    <svg class="w-[24px] h-[24px] block inactive-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.494 8.006A1 1 0 0015.42 7.82l-5.656 1.886a1 1 0 00-.584.584l-1.886 5.656a1 1 0 001.18 1.287l5.656-1.886a1 1 0 00.584-.584l1.886-5.656a1 1 0 00-.062-.801zM12 21a9 9 0 110-18 9 9 0 010 18z"></path></svg>
+                </div>
+                <span class="text-[10px] text-gray-800 mt-0.5 font-medium tracking-wide" id="wechat-tab-text-3">发现</span>
+            </div>
+            <!-- 我 -->
+            <div onclick="switchWeChatTab(4)" class="flex flex-col items-center justify-start w-16 cursor-pointer opacity-80 hover:opacity-100 transition" id="wechat-tab-btn-4">
+                <div class="w-[28px] h-[28px] flex items-center justify-center text-gray-800" id="wechat-tab-icon-4">
+                    <!-- Active -->
+                    <svg class="w-[24px] h-[24px] hidden active-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg>
+                    <!-- Inactive -->
+                    <svg class="w-[24px] h-[24px] block inactive-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"></path></svg>
+                </div>
+                <span class="text-[10px] text-gray-800 mt-0.5 font-medium tracking-wide" id="wechat-tab-text-4">我</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings App Overlay -->
+    <div id="settings-app" class="fixed inset-0 w-full h-full bg-[#FDFBF7] z-40 hidden flex-col transition-transform duration-300 translate-y-full text-[#5C4D4A] overscroll-none">
+        <div class="pt-[72px] pb-4 px-6 flex justify-between items-center bg-[#FDFBF7] shrink-0 border-b-4 border-[#F7D1D7]/30">
+            <button onclick="closeSettings()" class="text-[#A5C9A1] font-bold text-lg tracking-wide hover:opacity-80 transition flex items-center gap-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>返回
+            </button>
+            <h2 class="text-xl font-black tracking-widest text-[#5C4D4A]">設定</h2>
+            <div class="w-16"></div> <!-- spacer -->
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6 max-w-sm mx-auto w-full flex flex-col gap-5 pt-8 pb-12 custom-scrollbar">
+            <!-- API设置 (樱花粉) -->
+            <button onclick="openApiSettings()" class="w-full bg-[#F7D1D7]/40 hover:bg-[#F7D1D7]/70 text-[#5C4D4A] rounded-full py-4 px-6 shadow-sm border-2 border-[#F7D1D7]/80 flex items-center justify-between transition-all group font-bold text-[17px] tracking-wider active:scale-95">
+                <span class="flex items-center gap-4">
+                    <span class="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-sm">
+                        <svg class="w-5 h-5 text-[#D98A94]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    </span>
+                    API 设置
+                </span>
+                <span class="text-[#F7D1D7] group-hover:translate-x-1 transition-transform stroke-current">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+                </span>
+            </button>
+
+            <!-- 美化设置 (抹茶绿) -->
+            <button onclick="openThemeSettings()" class="w-full bg-[#A5C9A1]/30 hover:bg-[#A5C9A1]/60 text-[#5C4D4A] rounded-full py-4 px-6 shadow-sm border-2 border-[#A5C9A1]/60 flex items-center justify-between transition-all group font-bold text-[17px] tracking-wider active:scale-95">
+                <span class="flex items-center gap-4">
+                    <span class="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-sm">
+                        <svg class="w-5 h-5 text-[#88B084]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                    </span>
+                    美化 设置
+                </span>
+                <span class="text-[#A5C9A1] group-hover:translate-x-1 transition-transform stroke-current">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+                </span>
+            </button>
+
+            <!-- 导出全部数据 (奶黄色) -->
+            <button onclick="exportAllData()" class="w-full bg-[#F5E1A4]/40 hover:bg-[#F5E1A4]/70 text-[#5C4D4A] rounded-full py-4 px-6 shadow-sm border-2 border-[#F5E1A4]/80 flex items-center justify-between transition-all group font-bold text-[17px] tracking-wider active:scale-95">
+                <span class="flex items-center gap-4">
+                    <span class="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-sm">
+                        <svg class="w-5 h-5 text-[#E5CA6B]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    </span>
+                    导出全部数据
+                </span>
+                <span class="text-[#E5CA6B] group-hover:translate-x-1 transition-transform stroke-current">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+                </span>
+            </button>
+
+            <!-- 导入全部数据 (三色团子/浅咖色) -->
+            <input type="file" id="import-upload" accept=".json" class="hidden" onchange="importAllData(event)">
+            <button onclick="document.getElementById('import-upload').click()" class="w-full bg-[#E8D3C3]/40 hover:bg-[#E8D3C3]/70 text-[#5C4D4A] rounded-full py-4 px-6 shadow-sm border-2 border-[#E8D3C3]/80 flex items-center justify-between transition-all group font-bold text-[17px] tracking-wider active:scale-95">
+                <span class="flex items-center gap-4">
+                    <span class="bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-sm">
+                        <svg class="w-5 h-5 text-[#C8B09F]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    </span>
+                    导入全部数据
+                </span>
+                <span class="text-[#C8B09F] group-hover:translate-x-1 transition-transform stroke-current">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+                </span>
+            </button>
+
+            <!-- 免责声明 (白色底) -->
+            <button class="w-full bg-white hover:bg-gray-50 text-[#9E8F8D] rounded-full py-4 px-6 shadow-sm border-2 border-gray-100 flex items-center justify-between transition-all group font-bold text-[17px] tracking-wider mt-2 active:scale-95">
+                <span class="flex items-center gap-4">
+                    <span class="bg-[#FDFBF7] w-10 h-10 rounded-full flex items-center justify-center shadow-sm border border-gray-50">
+                        <svg class="w-5 h-5 text-[#9E8F8D]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </span>
+                    免责声明
+                </span>
+                <span class="text-gray-300 group-hover:translate-x-1 transition-transform stroke-current">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg>
+                </span>
+            </button>
+            
+            <div class="mt-auto pt-8 text-center">
+                <p class="text-xs text-[#C8B09F] font-medium tracking-widest opacity-80">· 小春日和 ·</p>
+                <p class="text-[10px] text-[#C8B09F] mt-1 opacity-50">MeoMeow Phone v1.0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Settings Dialog -->
+    <div id="api-settings-overlay" class="fixed inset-0 w-full h-full bg-black/40 backdrop-blur-sm z-[60] hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-[#FDFBF7] w-11/12 max-w-sm rounded-[2.5rem] p-6 shadow-2xl transform scale-95 transition-transform duration-300 border-4 border-[#F7D1D7]/40 max-h-[85vh] overflow-y-auto custom-scrollbar" id="api-settings-box">
+            <h3 class="text-[#5C4D4A] font-black text-xl mb-5 text-center tracking-widest">API 設定</h3>
+            
+            <div class="flex flex-col gap-4 text-[#5C4D4A]">
+                <!-- Preset -->
+                <div>
+                    <label class="block text-xs font-bold text-[#C8B09F] mb-1.5 pl-2 tracking-wider">预设选择</label>
+                    <select id="api-preset-select" class="w-full bg-[#E8D3C3]/30 border-2 border-[#E8D3C3]/80 rounded-full px-4 py-3 outline-none focus:border-[#F7D1D7] text-[14px] font-bold transition-colors appearance-none text-[#5C4D4A]">
+                        <option value="default">默认预设 (OpenAI)</option>
+                    </select>
+                </div>
+
+                <!-- URL -->
+                <div>
+                    <label class="block text-xs font-bold text-[#C8B09F] mb-1.5 pl-2 tracking-wider">接口地址 (URL 支持 v1/v2/v3)</label>
+                    <input type="text" id="api-url-input" class="w-full bg-[#E8D3C3]/30 border-2 border-[#E8D3C3]/80 rounded-full px-4 py-3 outline-none focus:border-[#F7D1D7] text-[14px] font-bold transition-colors placeholder:text-[#C8B09F]/60 text-[#5C4D4A]" placeholder="https://api.openai.com/v1">
+                </div>
+
+                <!-- API Key -->
+                <div>
+                    <label class="block text-xs font-bold text-[#C8B09F] mb-1.5 pl-2 tracking-wider">密钥 (API Key)</label>
+                    <input type="password" id="api-key-input" class="w-full bg-[#E8D3C3]/30 border-2 border-[#E8D3C3]/80 rounded-full px-4 py-3 outline-none focus:border-[#F7D1D7] text-[14px] font-bold transition-colors placeholder:text-[#C8B09F]/60 text-[#5C4D4A]" placeholder="sk-...">
+                </div>
+
+                <!-- Model Selection -->
+                <div>
+                    <label class="block text-xs font-bold text-[#C8B09F] mb-1.5 pl-2 tracking-wider">模型选择</label>
+                    <div class="flex gap-2">
+                        <select id="api-model-select" class="flex-1 bg-[#E8D3C3]/30 border-2 border-[#E8D3C3]/80 rounded-full px-4 py-3 outline-none focus:border-[#F7D1D7] text-[14px] font-bold transition-colors appearance-none text-[#5C4D4A]">
+                            <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
+                            <option value="gpt-4">gpt-4</option>
+                        </select>
+                        <button onclick="fetchModels()" class="bg-[#A5C9A1]/90 hover:bg-[#A5C9A1] text-white rounded-full px-5 text-sm font-bold transition shadow-sm shrink-0 tracking-wider">获取</button>
+                    </div>
+                </div>
+
+                <!-- Save Preset -->
+                <div class="pt-4 mt-2 border-t-2 border-[#E8D3C3]/40 border-dashed">
+                    <label class="block text-xs font-bold text-[#C8B09F] mb-1.5 pl-2 tracking-wider">保存为新预设 (可选)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="api-preset-name-input" class="flex-1 bg-white border-2 border-[#F5E1A4] rounded-full px-4 py-3 outline-none focus:border-[#F7D1D7] text-[14px] font-bold transition-colors placeholder:text-[#E5CA6B]/70 text-[#5C4D4A]" placeholder="预设名称...">
+                        <button onclick="saveApiPreset()" class="bg-[#F5E1A4] hover:bg-[#E5CA6B] text-[#5C4D4A] rounded-full px-4 text-xs font-bold transition shadow-sm shrink-0 tracking-wider">保存预设</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-between gap-3 mt-8">
+                <button onclick="closeApiSettings()" class="flex-1 bg-[#F4F4F5] text-[#9E8F8D] rounded-full py-3.5 font-bold hover:bg-[#E4E4E5] transition tracking-widest text-[15px]">取消</button>
+                <button onclick="saveApiConfig()" class="flex-[1.5] bg-[#F7D1D7] text-[#5C4D4A] rounded-full py-3.5 font-black hover:bg-[#f3b5be] transition shadow-md tracking-widest text-[15px]">应用设定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Settings Dialog -->
+    <div id="theme-settings-overlay" class="fixed inset-0 w-full h-full bg-[#FDFBF7] z-[60] hidden flex-col transition-transform duration-300 translate-y-full text-[#5C4D4A] overscroll-none">
+        <div class="pt-[72px] pb-4 px-6 flex justify-between items-center bg-[#FDFBF7] shrink-0 border-b-4 border-[#A5C9A1]/30">
+            <button onclick="closeThemeSettings()" class="text-[#A5C9A1] font-bold text-lg tracking-wide hover:opacity-80 transition flex items-center gap-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg>返回
+            </button>
+            <h2 class="text-xl font-black tracking-widest text-[#5C4D4A]">美化</h2>
+            <button onclick="saveThemeConfig()" class="text-[#F7D1D7] font-bold text-lg tracking-wide hover:opacity-80 transition">保存</button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6 max-w-sm mx-auto w-full flex flex-col gap-8 pt-6 pb-12 custom-scrollbar">
+            
+            <!-- 桌面壁纸 -->
+            <div>
+                <h3 class="text-sm font-bold text-[#88B084] mb-3 tracking-wider flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    桌面壁纸
+                </h3>
+                <div class="bg-white rounded-3xl p-4 shadow-sm border border-[#A5C9A1]/20 flex flex-col items-center gap-4">
+                    <div class="w-32 h-56 rounded-2xl bg-gray-200 border-2 border-dashed border-gray-300 overflow-hidden relative flex items-center justify-center cursor-pointer hover:opacity-80 transition" onclick="document.getElementById('wallpaper-upload').click()">
+                        <img id="wallpaper-preview" class="w-full h-full object-cover hidden">
+                        <span id="wallpaper-placeholder" class="text-xs text-gray-400 font-medium">点击上传壁纸</span>
+                    </div>
+                    <input type="file" id="wallpaper-upload" accept="image/*" class="hidden" onchange="previewThemeImage(event, 'wallpaper-preview', 'wallpaper-placeholder')">
+                    
+                    <div class="flex gap-3 w-full">
+                        <button onclick="resetWallpaper()" class="flex-1 py-2 rounded-full border border-gray-200 text-gray-500 text-sm font-bold hover:bg-gray-50 transition">恢复默认</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 桌面应用图标 -->
+            <div>
+                <h3 class="text-sm font-bold text-[#88B084] mb-3 tracking-wider flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    应用图标与命名
+                </h3>
+                <div class="bg-white rounded-3xl p-4 shadow-sm border border-[#A5C9A1]/20 flex flex-col gap-4" id="theme-apps-list">
+                    <!-- Apps injected via JS -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Custom Dialog -->
+    <div id="dialog-overlay" class="fixed inset-0 w-full h-full bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-[#fff9f9] w-4/5 max-w-sm rounded-[2rem] p-6 shadow-2xl transform scale-95 transition-transform duration-300" id="dialog-box">
+            <h3 id="dialog-title" class="text-gray-800 font-bold text-lg mb-4 text-center">修改</h3>
+            <textarea id="dialog-input" class="w-full bg-gray-100 border-none rounded-[1.5rem] px-4 py-3 text-gray-800 focus:ring-2 focus:ring-pink-300 outline-none mb-6 text-center shadow-inner resize-none" rows="3" placeholder="输入内容(多个日程请换行)"></textarea>
+            <div class="flex justify-between gap-4">
+                <button onclick="closeDialog()" class="flex-1 bg-gray-200 text-gray-600 rounded-full py-2.5 font-bold hover:bg-gray-300 transition">取消</button>
+                <button onclick="saveDialog()" class="flex-1 bg-pink-400 text-white rounded-full py-2.5 font-bold hover:bg-pink-500 transition shadow-md">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Profile Persistence Logic ---
+        function loadProfileData() {
+            try {
+                const profileStr = localStorage.getItem('melancholic_profile');
+                if (profileStr) {
+                    const p = JSON.parse(profileStr);
+                    if(p.topImg) document.getElementById('top-img').src = p.topImg;
+                    if(p.bottomImg) document.getElementById('bottom-img').src = p.bottomImg;
+                    if(p.avatarImg) document.getElementById('avatar-img').src = p.avatarImg;
+                    if(p.nickname) document.querySelector('div[onclick*="nickname"]').innerText = p.nickname;
+                    if(p.userId) document.querySelector('div[onclick*="userid"]').innerText = p.userId;
+                    if(p.signature) document.querySelector('div[onclick*="signature"]').innerText = p.signature;
+                    if(p.location) document.getElementById('location-text').innerText = p.location;
+                }
+            } catch (e) {}
+        }
+        function saveProfileData() {
+            const p = {
+                topImg: document.getElementById('top-img').src,
+                bottomImg: document.getElementById('bottom-img').src,
+                avatarImg: document.getElementById('avatar-img').src,
+                nickname: document.querySelector('div[onclick*="nickname"]').innerText,
+                userId: document.querySelector('div[onclick*="userid"]').innerText,
+                signature: document.querySelector('div[onclick*="signature"]').innerText,
+                location: document.getElementById('location-text').innerText,
+            };
+            localStorage.setItem('melancholic_profile', JSON.stringify(p));
+        }
+        loadProfileData();
+
+        // --- Theme / Customization Logic ---
+        const THEME_APPS_COUNT = 7;
+        const defaultAppNames = ["微信", "查手机", "社区", "日记", "短信", "电话", "设置"];
+        
+        let themeData = JSON.parse(localStorage.getItem('melancholic_theme') || '{"wallpaper": null, "apps": {}}');
+
+        function applyThemeData() {
+            // Apply Wallpaper
+            if (themeData.wallpaper) {
+                // 转义 Base64 中可能导致解析出错的双引号
+                document.body.style.backgroundImage = `url("${themeData.wallpaper.replace(/"/g, '\\"')}")`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center';
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundAttachment = 'scroll';
+            } else {
+                document.body.style.backgroundImage = 'linear-gradient(to bottom, #4a4f56, #2a2d34)';
+                document.body.style.backgroundAttachment = 'scroll';
+            }
+
+            // Apply Apps
+            for (let i = 0; i < THEME_APPS_COUNT; i++) {
+                let appData = themeData.apps[i] || {};
+                let nameEl = document.getElementById(`app-name-${i}`);
+                let imgEl = document.getElementById(`app-icon-img-${i}`);
+                
+                if (!imgEl) continue;
+                
+                let origEl = imgEl.previousElementSibling; // The div with original-icon
+
+                // Update Name
+                if (nameEl) {
+                    nameEl.innerText = appData.name || defaultAppNames[i];
+                }
+                
+                // Update Icon
+                if (appData.icon) {
+                    imgEl.src = appData.icon;
+                    imgEl.classList.remove('hidden');
+                    if (origEl) origEl.classList.add('hidden');
+                } else {
+                    imgEl.removeAttribute('src');
+                    imgEl.classList.add('hidden');
+                    if (origEl) origEl.classList.remove('hidden');
+                }
+            }
+        }
+        applyThemeData();
+
+        function openThemeSettings() {
+            const overlay = document.getElementById('theme-settings-overlay');
+            
+            // Sync current wallpaper to preview
+            const wpPreview = document.getElementById('wallpaper-preview');
+            const wpPlaceholder = document.getElementById('wallpaper-placeholder');
+            if (themeData.wallpaper) {
+                wpPreview.src = themeData.wallpaper;
+                wpPreview.classList.remove('hidden');
+                wpPlaceholder.classList.add('hidden');
+            } else {
+                wpPreview.removeAttribute('src');
+                wpPreview.classList.add('hidden');
+                wpPlaceholder.classList.remove('hidden');
+            }
+
+            // Render Apps list
+            const appsList = document.getElementById('theme-apps-list');
+            appsList.innerHTML = '';
+            for (let i = 0; i < THEME_APPS_COUNT; i++) {
+                let appData = themeData.apps[i] || {};
+                let currentName = appData.name || defaultAppNames[i];
+                let currentIconSrc = appData.icon || '';
+                
+                appsList.innerHTML += `
+                    <div class="flex items-center gap-3 border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                        <div class="w-12 h-12 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center relative overflow-hidden shrink-0 cursor-pointer hover:opacity-80" onclick="document.getElementById('theme-app-upload-${i}').click()">
+                            ${currentIconSrc ? `<img src="${currentIconSrc}" class="w-full h-full object-cover" id="theme-app-preview-${i}">` : `<span class="text-xs text-gray-400" id="theme-app-preview-${i}">上传</span>`}
+                            <input type="file" id="theme-app-upload-${i}" accept="image/*" class="hidden" onchange="previewAppIcon(event, ${i})">
+                        </div>
+                        <div class="flex-1">
+                            <input type="text" id="theme-app-name-${i}" value="${currentName}" class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none focus:border-[#A5C9A1] transition" placeholder="应用名称">
+                        </div>
+                        <button onclick="resetAppIcon(${i})" class="text-xs text-red-400 hover:text-red-500 font-medium px-2 py-1">重置</button>
+                    </div>
+                `;
+            }
+
+            overlay.classList.remove('hidden');
+            void overlay.offsetWidth;
+            overlay.classList.remove('translate-y-full');
+        }
+
+        function closeThemeSettings() {
+            const overlay = document.getElementById('theme-settings-overlay');
+            overlay.classList.add('translate-y-full');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 300);
+        }
+
+        function previewThemeImage(event, previewId, placeholderId) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById(previewId);
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                    if(placeholderId) document.getElementById(placeholderId).classList.add('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function previewAppIcon(event, index) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const container = document.getElementById(`theme-app-preview-${index}`).parentElement;
+                    container.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover" id="theme-app-preview-${index}">
+                                           <input type="file" id="theme-app-upload-${index}" accept="image/*" class="hidden" onchange="previewAppIcon(event, ${index})">`;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function resetAppIcon(index) {
+            const container = document.getElementById(`theme-app-preview-${index}`).parentElement;
+            container.innerHTML = `<span class="text-xs text-gray-400" id="theme-app-preview-${index}">上传</span>
+                                   <input type="file" id="theme-app-upload-${index}" accept="image/*" class="hidden" onchange="previewAppIcon(event, ${index})">`;
+            document.getElementById(`theme-app-name-${index}`).value = defaultAppNames[index];
+        }
+
+        function resetWallpaper() {
+            const wpPreview = document.getElementById('wallpaper-preview');
+            const wpPlaceholder = document.getElementById('wallpaper-placeholder');
+            wpPreview.removeAttribute('src');
+            wpPreview.classList.add('hidden');
+            wpPlaceholder.classList.remove('hidden');
+            document.getElementById('wallpaper-upload').value = '';
+        }
+
+        function saveThemeConfig() {
+            // Save Wallpaper
+            const wpPreview = document.getElementById('wallpaper-preview');
+            if (!wpPreview.classList.contains('hidden') && wpPreview.src) {
+                themeData.wallpaper = wpPreview.src;
+            } else {
+                themeData.wallpaper = null;
+            }
+
+            // Save Apps
+            for (let i = 0; i < THEME_APPS_COUNT; i++) {
+                let nameVal = document.getElementById(`theme-app-name-${i}`).value.trim();
+                let previewEl = document.getElementById(`theme-app-preview-${i}`);
+                let iconSrc = previewEl.tagName.toLowerCase() === 'img' ? previewEl.src : null;
+                
+                if (!themeData.apps[i]) themeData.apps[i] = {};
+                themeData.apps[i].name = nameVal || defaultAppNames[i];
+                themeData.apps[i].icon = iconSrc;
+            }
+
+            localStorage.setItem('melancholic_theme', JSON.stringify(themeData));
+            applyThemeData();
+            closeThemeSettings();
+        }
+
+        // --- Schedule & Calendar Logic ---
+        const months = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        
+        // 数据结构兼容转换 (新版本支持单日多行程与Emoji)
+        let rawSchedules = JSON.parse(localStorage.getItem('melancholic_schedules') || '{}');
+        let schedules = {};
+        for (let date in rawSchedules) {
+            if (typeof rawSchedules[date] === 'string') {
+                let lines = rawSchedules[date].split('\n').filter(l => l.trim() !== '');
+                schedules[date] = lines.map((text, idx) => ({ id: Date.now() + idx, emoji: '📌', text: text }));
+            } else {
+                schedules[date] = rawSchedules[date];
+            }
+        }
+        function saveSchedulesData() {
+            localStorage.setItem('melancholic_schedules', JSON.stringify(schedules));
+        }
+
+        let currentCalDate = new Date();
+        let selectedDateStr = null;
+        let editingScheduleId = null;
+        const EMOJI_LIST = ['📌', '🗓️', '✈️', '🚗', '🍔', '☕', '🏃‍♂️', '🎮', '🎂', '🏥', '💼', '💰'];
+        let currentSelectedEmoji = '📌';
+
+        function updateWidget() {
+            const today = new Date();
+            document.getElementById('cal-month').innerText = months[today.getMonth()];
+            document.getElementById('cal-date').innerText = today.getDate();
+            document.getElementById('cal-day').innerText = days[today.getDay()].substring(0, 3); // Shortened day
+
+            const todayStr = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+            
+            const todaySchedules = schedules[todayStr] || [];
+            const listDiv = document.getElementById('widget-schedule-list');
+            listDiv.innerHTML = '';
+            
+            if (todaySchedules.length > 0) {
+                todaySchedules.forEach(item => {
+                    const isChecked = item.completed;
+                    listDiv.innerHTML += `
+                        <div class="flex items-center gap-2 bg-white/70 rounded-xl p-2 shadow-sm border border-white/50">
+                            <button onclick="toggleComplete('${todayStr}', ${item.id})" class="shrink-0 w-3.5 h-3.5 rounded-[4px] border-2 flex items-center justify-center transition-colors ${isChecked ? 'bg-[#D98A94] border-[#D98A94]' : 'border-[#D98A94]/50 bg-transparent'}">
+                                ${isChecked ? '<svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                            </button>
+                            <div class="text-[11px] text-[#6D5A62] truncate flex-1 font-medium ${isChecked ? 'line-through opacity-50' : ''}">${item.emoji} ${item.text}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                listDiv.innerHTML = `<div class="text-[10px] text-[#A89297] flex items-center justify-center h-full w-full opacity-70 font-medium pb-4">今日暂无行程☕</div>`;
+            }
+        }
+
+        function toggleComplete(dateStr, id) {
+            if (schedules[dateStr]) {
+                const item = schedules[dateStr].find(s => s.id === id);
+                if (item) {
+                    item.completed = !item.completed;
+                    saveSchedulesData();
+                    updateWidget();
+                    if (!document.getElementById('day-list-overlay').classList.contains('hidden') && selectedDateStr === dateStr) {
+                        renderDayList();
+                    }
+                }
+            }
+        }
+
+        function openScheduleEditorForToday() {
+            const today = new Date();
+            selectedDateStr = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+            openScheduleEditor();
+        }
+        updateWidget();
+
+        function openCalendar() {
+            document.getElementById('theme-color-meta').setAttribute('content', '#f4f4f5');
+            currentCalDate = new Date();
+            renderCalendar();
+            const calApp = document.getElementById('calendar-app');
+            calApp.classList.remove('hidden');
+            // Force reflow
+            void calApp.offsetWidth;
+            calApp.classList.remove('translate-y-full');
+        }
+
+        function closeCalendar() {
+            document.getElementById('theme-color-meta').setAttribute('content', '#4a4f56');
+            const calApp = document.getElementById('calendar-app');
+            calApp.classList.add('translate-y-full');
+            setTimeout(() => {
+                calApp.classList.add('hidden');
+            }, 300);
+            updateWidget();
+        }
+
+        // --- WeChat App Logic ---
+        function openWeChat() {
+            document.getElementById('theme-color-meta').setAttribute('content', '#ededed');
+            const app = document.getElementById('wechat-app');
+            app.classList.remove('hidden');
+            app.classList.add('flex'); // 确保启用 flex 布局以撑开主内容区
+            void app.offsetWidth;
+            app.classList.remove('translate-y-full');
+            
+            // Default to Tab 1
+            switchWeChatTab(1);
+        }
+
+        function closeWeChat() {
+            document.getElementById('theme-color-meta').setAttribute('content', '#4a4f56');
+            const app = document.getElementById('wechat-app');
+            app.classList.add('translate-y-full');
+            setTimeout(() => {
+                app.classList.add('hidden');
+                app.classList.remove('flex');
+            }, 300);
+        }
+
+        function switchWeChatTab(tabIndex) {
+            // Update Title & Top Icon
+            const title = document.getElementById('wechat-header-title');
+            const addIcon = document.getElementById('wechat-header-add-icon');
+            const friendIcon = document.getElementById('wechat-header-friend-icon');
+            const searchBar = document.getElementById('wechat-search-bar');
+
+            if (tabIndex === 1) {
+                title.innerText = "微信";
+                title.parentElement.parentElement.classList.remove('hidden');
+                searchBar.classList.remove('hidden');
+                addIcon.classList.remove('hidden');
+                friendIcon.classList.add('hidden');
+            } else if (tabIndex === 2) {
+                title.innerText = "通讯录";
+                title.parentElement.parentElement.classList.remove('hidden');
+                searchBar.classList.remove('hidden');
+                addIcon.classList.add('hidden');
+                friendIcon.classList.remove('hidden');
+            } else if (tabIndex === 3) {
+                title.innerText = "发现";
+                title.parentElement.parentElement.classList.remove('hidden');
+                searchBar.classList.add('hidden');
+                addIcon.classList.add('hidden');
+                friendIcon.classList.add('hidden');
+            } else if (tabIndex === 4) {
+                // '我' Tab hides the header
+                title.parentElement.parentElement.classList.add('hidden');
+            }
+
+            // Update Tab Content
+            document.getElementById('wechat-tab-1').classList.toggle('hidden', tabIndex !== 1);
+            document.getElementById('wechat-tab-1').classList.toggle('block', tabIndex === 1);
+            
+            document.getElementById('wechat-tab-2').classList.toggle('hidden', tabIndex !== 2);
+            document.getElementById('wechat-tab-2').classList.toggle('block', tabIndex === 2);
+
+            document.getElementById('wechat-tab-3').classList.toggle('hidden', tabIndex !== 3);
+            document.getElementById('wechat-tab-3').classList.toggle('block', tabIndex === 3);
+
+            document.getElementById('wechat-tab-4').classList.toggle('hidden', tabIndex !== 4);
+            document.getElementById('wechat-tab-4').classList.toggle('block', tabIndex === 4);
+
+            // Update Bottom Bar State
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`wechat-tab-btn-${i}`);
+                if (!btn) continue;
+                const text = document.getElementById(`wechat-tab-text-${i}`);
+                const iconContainer = document.getElementById(`wechat-tab-icon-${i}`);
+                
+                const activeSvg = iconContainer.querySelector('.active-icon');
+                const inactiveSvg = iconContainer.querySelector('.inactive-icon');
+
+                if (i === tabIndex) {
+                    btn.classList.remove('opacity-80');
+                    btn.classList.add('opacity-100');
+                    text.classList.replace('text-gray-800', 'text-[#07c160]');
+                    iconContainer.classList.replace('text-gray-800', 'text-[#07c160]');
+                    activeSvg.classList.remove('hidden');
+                    activeSvg.classList.add('block');
+                    inactiveSvg.classList.remove('block');
+                    inactiveSvg.classList.add('hidden');
+                } else {
+                    btn.classList.add('opacity-80');
+                    btn.classList.remove('opacity-100');
+                    text.classList.replace('text-[#07c160]', 'text-gray-800');
+                    iconContainer.classList.replace('text-[#07c160]', 'text-gray-800');
+                    activeSvg.classList.remove('block');
+                    activeSvg.classList.add('hidden');
+                    inactiveSvg.classList.remove('hidden');
+                    inactiveSvg.classList.add('block');
+                }
+            }
+        }
+
+        // --- Settings App Logic ---
+        function openSettings() {
+            document.getElementById('theme-color-meta').setAttribute('content', '#FDFBF7');
+            const settingsApp = document.getElementById('settings-app');
+            settingsApp.classList.remove('hidden');
+            void settingsApp.offsetWidth; // reflow
+            settingsApp.classList.remove('translate-y-full');
+        }
+
+        function closeSettings() {
+            document.getElementById('theme-color-meta').setAttribute('content', '#4a4f56');
+            const settingsApp = document.getElementById('settings-app');
+            settingsApp.classList.add('translate-y-full');
+            setTimeout(() => {
+                settingsApp.classList.add('hidden');
+            }, 300);
+        }
+
+        function changeMonth(dir) {
+            currentCalDate.setMonth(currentCalDate.getMonth() + dir);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const year = currentCalDate.getFullYear();
+            const month = currentCalDate.getMonth();
+            document.getElementById('calendar-header').innerText = `${year}年 ${months[month]}`;
+            
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+            
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div></div>`;
+            }
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${year}-${month + 1}-${i}`;
+                const isToday = (dateStr === todayStr);
+                const dayEvents = schedules[dateStr] || [];
+                const currentDayOfWeek = new Date(year, month, i).getDay();
+                const isWeekend = currentDayOfWeek === 0 || currentDayOfWeek === 6;
+                
+                let classes = "aspect-square flex flex-col pt-1 pb-1 items-center rounded-sm text-sm relative cursor-pointer hover:opacity-80 transition";
+                if (isToday) {
+                    classes += " bg-[#cfb2b6] text-white font-bold shadow-sm";
+                } else if (isWeekend) {
+                    classes += " bg-[#e8eef5] text-[#837a73]";
+                } else {
+                    classes += " bg-[#f0f0f0] text-[#837a73]";
+                }
+                
+                let eventDisplay = '';
+                if (dayEvents.length > 0) {
+                    let displayEmojis = dayEvents.slice(0, 4).map(e => e.emoji).join('');
+                    eventDisplay = `<div class="mt-auto mb-auto text-[12px] leading-tight text-center flex flex-wrap justify-center px-0.5">${displayEmojis}</div>`;
+                }
+                
+                grid.innerHTML += `<div class="${classes}" onclick="openDayList('${dateStr}')">
+                    <span class="text-[10px] font-semibold self-end pr-1.5 opacity-70">${i}</span>
+                    ${eventDisplay}
+                </div>`;
+            }
+        }
+
+        // --- Day List Overlay ---
+        const dayListOverlay = document.getElementById('day-list-overlay');
+        const dayListBox = document.getElementById('day-list-box');
+        const dayListContent = document.getElementById('day-list-content');
+
+        function openDayList(dateStr) {
+            selectedDateStr = dateStr;
+            document.getElementById('day-list-title').innerText = `${dateStr} 行程`;
+            renderDayList();
+
+            dayListOverlay.classList.remove('hidden');
+            void dayListOverlay.offsetWidth; // reflow
+            dayListOverlay.classList.remove('opacity-0');
+            dayListBox.classList.remove('translate-y-full');
+        }
+
+        function closeDayList() {
+            dayListOverlay.classList.add('opacity-0');
+            dayListBox.classList.add('translate-y-full');
+            setTimeout(() => {
+                dayListOverlay.classList.add('hidden');
+            }, 300);
+            renderCalendar();
+            updateWidget();
+        }
+
+        function renderDayList() {
+            const dayEvents = schedules[selectedDateStr] || [];
+            dayListContent.innerHTML = '';
+            
+            if (dayEvents.length === 0) {
+                dayListContent.innerHTML = `<div class="text-center text-gray-400 text-sm mt-8">今日暂无行程</div>`;
+                return;
+            }
+
+            dayEvents.forEach(item => {
+                const isChecked = item.completed;
+                dayListContent.innerHTML += `
+                    <div class="bg-white rounded-[1.2rem] p-4 flex items-center gap-3 shadow-sm border border-gray-100">
+                        <button onclick="toggleComplete('${selectedDateStr}', ${item.id})" class="shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${isChecked ? 'bg-pink-400 border-pink-400' : 'border-pink-300 bg-transparent'}">
+                            ${isChecked ? '<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                        </button>
+                        <div class="text-2xl opacity-${isChecked ? '50' : '100'}">${item.emoji}</div>
+                        <div class="flex-1 text-gray-700 font-medium truncate ${isChecked ? 'line-through opacity-50' : ''}">${item.text}</div>
+                        <button onclick="openScheduleEditor(${item.id})" class="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // --- Schedule Editor ---
+        const schedEditOverlay = document.getElementById('schedule-edit-overlay');
+        const schedEditBox = document.getElementById('schedule-edit-box');
+        const schedInput = document.getElementById('schedule-input');
+        const emojiPicker = document.getElementById('emoji-picker');
+        const btnDeleteSched = document.getElementById('btn-delete-schedule');
+
+        function initEmojiPicker() {
+            emojiPicker.innerHTML = EMOJI_LIST.map(e => `
+                <div class="cursor-pointer hover:bg-gray-200 rounded-lg p-1 text-center transition select-none" onclick="selectEmoji('${e}', this)">${e}</div>
+            `).join('');
+        }
+        initEmojiPicker();
+
+        function selectEmoji(emoji, element, updateInput = true) {
+            currentSelectedEmoji = emoji;
+            if (updateInput) {
+                document.getElementById('custom-emoji-input').value = emoji;
+            }
+            Array.from(emojiPicker.children).forEach(el => {
+                el.classList.remove('bg-pink-100', 'ring-2', 'ring-pink-300');
+            });
+            if(element) {
+                element.classList.add('bg-pink-100', 'ring-2', 'ring-pink-300');
+            }
+        }
+
+        function updateCustomEmoji(val) {
+            currentSelectedEmoji = val || '📌';
+            Array.from(emojiPicker.children).forEach(el => {
+                el.classList.remove('bg-pink-100', 'ring-2', 'ring-pink-300');
+            });
+            const index = EMOJI_LIST.indexOf(val);
+            if (index !== -1) {
+                emojiPicker.children[index].classList.add('bg-pink-100', 'ring-2', 'ring-pink-300');
+            }
+        }
+
+        function openScheduleEditor(id = null) {
+            editingScheduleId = id;
+            document.getElementById('schedule-edit-title').innerText = id ? '编辑行程' : '添加行程';
+            
+            if (id) {
+                const item = (schedules[selectedDateStr] || []).find(s => s.id === id);
+                schedInput.value = item ? item.text : '';
+                currentSelectedEmoji = item ? item.emoji : '📌';
+                btnDeleteSched.classList.remove('hidden');
+            } else {
+                schedInput.value = '';
+                currentSelectedEmoji = '📌';
+                btnDeleteSched.classList.add('hidden');
+            }
+
+            document.getElementById('custom-emoji-input').value = currentSelectedEmoji;
+            
+            const emojiIndex = EMOJI_LIST.indexOf(currentSelectedEmoji);
+            if (emojiIndex !== -1) {
+                selectEmoji(currentSelectedEmoji, emojiPicker.children[emojiIndex], false);
+            } else {
+                selectEmoji(currentSelectedEmoji, null, false);
+            }
+
+            schedEditOverlay.classList.remove('hidden');
+            void schedEditOverlay.offsetWidth;
+            schedEditOverlay.classList.remove('opacity-0');
+            schedEditBox.classList.remove('scale-95');
+            schedEditBox.classList.add('scale-100');
+            schedInput.focus();
+        }
+
+        function closeScheduleEditor() {
+            schedEditOverlay.classList.add('opacity-0');
+            schedEditBox.classList.remove('scale-100');
+            schedEditBox.classList.add('scale-95');
+            setTimeout(() => {
+                schedEditOverlay.classList.add('hidden');
+            }, 300);
+        }
+
+        function saveSchedule() {
+            const text = schedInput.value.trim();
+            if (!text) return closeScheduleEditor();
+            
+            currentSelectedEmoji = document.getElementById('custom-emoji-input').value.trim() || '📌';
+
+            if (!schedules[selectedDateStr]) {
+                schedules[selectedDateStr] = [];
+            }
+
+            if (editingScheduleId) {
+                const idx = schedules[selectedDateStr].findIndex(s => s.id === editingScheduleId);
+                if (idx > -1) {
+                    const oldItem = schedules[selectedDateStr][idx];
+                    schedules[selectedDateStr][idx] = { ...oldItem, emoji: currentSelectedEmoji, text };
+                }
+            } else {
+                schedules[selectedDateStr].push({ id: Date.now(), emoji: currentSelectedEmoji, text, completed: false });
+            }
+
+            saveSchedulesData();
+            closeScheduleEditor();
+            renderDayList();
+        }
+
+        function deleteSchedule() {
+            if (editingScheduleId && schedules[selectedDateStr]) {
+                schedules[selectedDateStr] = schedules[selectedDateStr].filter(s => s.id !== editingScheduleId);
+                if (schedules[selectedDateStr].length === 0) {
+                    delete schedules[selectedDateStr];
+                }
+                saveSchedulesData();
+            }
+            closeScheduleEditor();
+            renderDayList();
+        }
+
+        // Image Preview
+        function previewImage(event, imgId) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById(imgId).src = e.target.result;
+                    if (typeof saveProfileData === 'function') saveProfileData();
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // API Settings Logic
+        const apiOverlay = document.getElementById('api-settings-overlay');
+        const apiBox = document.getElementById('api-settings-box');
+
+        function openApiSettings() {
+            apiOverlay.classList.remove('hidden');
+            void apiOverlay.offsetWidth; // trigger reflow
+            apiOverlay.classList.remove('opacity-0');
+            apiBox.classList.remove('scale-95');
+            apiBox.classList.add('scale-100');
+        }
+
+        function closeApiSettings() {
+            apiOverlay.classList.add('opacity-0');
+            apiBox.classList.remove('scale-100');
+            apiBox.classList.add('scale-95');
+            setTimeout(() => {
+                apiOverlay.classList.add('hidden');
+            }, 300);
+        }
+
+        function saveApiConfig() {
+            // 这里可以加入将 URL, API KEY, Model 保存到 localStorage 的逻辑
+            const url = document.getElementById('api-url-input').value;
+            const key = document.getElementById('api-key-input').value;
+            const model = document.getElementById('api-model-select').value;
+            console.log("Saved API Config:", {url, key, model});
+            alert("API 设置已应用！");
+            closeApiSettings();
+        }
+
+        function saveApiPreset() {
+            const name = document.getElementById('api-preset-name-input').value.trim();
+            if(!name) {
+                alert("请输入预设名称！");
+                return;
+            }
+            const select = document.getElementById('api-preset-select');
+            const newOption = document.createElement('option');
+            newOption.value = name;
+            newOption.text = name;
+            select.appendChild(newOption);
+            select.value = name;
+            document.getElementById('api-preset-name-input').value = "";
+            alert("预设 [" + name + "] 保存成功！");
+        }
+
+        function fetchModels() {
+            const btn = event.currentTarget;
+            const originalText = btn.innerText;
+            btn.innerText = "获取中...";
+            // 模拟API调用
+            setTimeout(() => {
+                btn.innerText = originalText;
+                const select = document.getElementById('api-model-select');
+                // 这里可以是真实的 fetch 逻辑获取模型列表
+                const mockModels = ["gpt-3.5-turbo-16k", "gpt-4-vision-preview", "claude-3-opus", "gemini-pro"];
+                mockModels.forEach(m => {
+                    if(!Array.from(select.options).some(opt => opt.value === m)){
+                        select.add(new Option(m, m));
+                    }
+                });
+                alert("模型列表获取成功！");
+            }, 1000);
+        }
+
+        // Dialog Logic
+        let currentEditingElement = null;
+        const overlay = document.getElementById('dialog-overlay');
+        const box = document.getElementById('dialog-box');
+        const input = document.getElementById('dialog-input');
+        const title = document.getElementById('dialog-title');
+
+        function openDialog(elementId, defaultValue, titleText, overrideText = null) {
+            // Keep reference to event target if available, or create virtual object for schedules
+            currentEditingElement = (event && event.currentTarget) ? event.currentTarget : null;
+            title.innerText = titleText;
+            
+            // Setup values based on type
+            if (elementId === 'location') {
+                input.value = document.getElementById('location-text').innerText;
+            } else if (currentEditingElement) {
+                input.value = currentEditingElement.innerText;
+            }
+
+            overlay.classList.remove('hidden');
+            // Trigger reflow
+            void overlay.offsetWidth;
+            overlay.classList.remove('opacity-0');
+            box.classList.remove('scale-95');
+            box.classList.add('scale-100');
+            input.focus();
+        }
+
+        function closeDialog() {
+            overlay.classList.add('opacity-0');
+            box.classList.remove('scale-100');
+            box.classList.add('scale-95');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 300);
+        }
+
+        function saveDialog() {
+            if (currentEditingElement) {
+                const val = input.value.trim();
+                
+                if (val !== "") {
+                    // Update standard desktop text
+                    const singleLineVal = val.replace(/\n/g, ' ');
+                    if (currentEditingElement.querySelector && currentEditingElement.querySelector('#location-text')) {
+                        document.getElementById('location-text').innerText = singleLineVal;
+                    } else if (currentEditingElement.innerText !== undefined) {
+                        currentEditingElement.innerText = singleLineVal;
+                    }
+                    if (typeof saveProfileData === 'function') saveProfileData();
+                }
+            }
+            closeDialog();
+        }
+
+        // --- Export & Import Data Logic ---
+        function exportAllData() {
+            try {
+                // Ensure latest profile state is saved
+                if (typeof saveProfileData === 'function') saveProfileData();
+
+                const storageData = {};
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    // Only backup relevant keys
+                    if (key.startsWith('melancholic_')) {
+                        storageData[key] = localStorage.getItem(key);
+                    }
+                }
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(storageData));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "MeoMeow_Backup_" + new Date().getTime() + ".json");
+                document.body.appendChild(downloadAnchorNode); 
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            } catch (err) {
+                alert("导出失败: " + err.message);
+            }
+        }
+
+        // --- WeChat Me Profile Logic ---
+        let meProfileData = JSON.parse(localStorage.getItem('melancholic_me_profile') || JSON.stringify({
+            avatar: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=',
+            name: '用户',
+            wechatId: '12345Q',
+            tickle: '',
+            gender: '其他',
+            region: '',
+            signature: '',
+            mask: ''
+        }));
+
+        function applyMeProfileData() {
+            const avatarEl = document.getElementById('wechat-me-avatar');
+            const nameEl = document.getElementById('wechat-me-name');
+            const idEl = document.getElementById('wechat-me-id');
+            
+            if (avatarEl) avatarEl.src = meProfileData.avatar;
+            if (nameEl) nameEl.innerText = meProfileData.name || '用户';
+            if (idEl) idEl.innerText = `微信号：${meProfileData.wechatId || '12345Q'}`;
+        }
+        applyMeProfileData();
+
+        function openMeProfilePage() {
+            document.getElementById('me-avatar-preview').src = meProfileData.avatar;
+            document.getElementById('me-name-input').value = meProfileData.name;
+            document.getElementById('me-wechat-input').value = meProfileData.wechatId;
+            document.getElementById('me-tickle-input').value = meProfileData.tickle;
+            document.getElementById('me-gender-select').value = meProfileData.gender;
+            document.getElementById('me-region-input').value = meProfileData.region;
+            document.getElementById('me-signature-input').value = meProfileData.signature;
+            document.getElementById('me-mask-input').value = meProfileData.mask;
+
+            const page = document.getElementById('wechat-me-profile-page');
+            page.classList.remove('hidden');
+            void page.offsetWidth;
+            page.classList.remove('translate-x-full');
+        }
+
+        function closeMeProfilePage() {
+            const page = document.getElementById('wechat-me-profile-page');
+            page.classList.add('translate-x-full');
+            setTimeout(() => page.classList.add('hidden'), 300);
+        }
+
+        function previewMeAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('me-avatar-preview').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveMeProfile() {
+            meProfileData.avatar = document.getElementById('me-avatar-preview').src;
+            meProfileData.name = document.getElementById('me-name-input').value.trim() || '用户';
+            meProfileData.wechatId = document.getElementById('me-wechat-input').value.trim() || '12345Q';
+            meProfileData.tickle = document.getElementById('me-tickle-input').value.trim();
+            meProfileData.gender = document.getElementById('me-gender-select').value;
+            meProfileData.region = document.getElementById('me-region-input').value.trim();
+            meProfileData.signature = document.getElementById('me-signature-input').value.trim();
+            meProfileData.mask = document.getElementById('me-mask-input').value.trim();
+
+            localStorage.setItem('melancholic_me_profile', JSON.stringify(meProfileData));
+            applyMeProfileData();
+            closeMeProfilePage();
+        }
+
+        // --- WeChat Friend & Group Logic ---
+        function toggleWechatAddMenu() {
+            document.getElementById('wechat-add-menu').classList.toggle('hidden');
+        }
+
+        let friendsData = JSON.parse(localStorage.getItem('melancholic_friends') || '[]');
+        
+        function saveFriendsData() {
+            localStorage.setItem('melancholic_friends', JSON.stringify(friendsData));
+            renderContactsList();
+            renderChatList();
+        }
+
+        function renderChatList() {
+            const tab1Container = document.querySelector('#wechat-tab-1 > div');
+            if (!tab1Container) return;
+            tab1Container.innerHTML = '';
+            
+            if (friendsData.length === 0) return;
+
+            const friends = friendsData.map(f => {
+                const char = charData.find(c => c.id === f.charId);
+                return {
+                    ...f,
+                    charName: char ? char.name : '未知角色',
+                    charAvatar: char ? (char.avatar || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=') : ''
+                };
+            });
+
+            // Sort by recently added for now (reverse order)
+            [...friends].reverse().forEach(f => {
+                const displayName = f.remark || f.charName;
+                tab1Container.innerHTML += `
+                    <div class="flex items-center px-4 py-3 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                        <div class="w-12 h-12 rounded-[6px] bg-gray-200 overflow-hidden shrink-0">
+                            <img src="${f.charAvatar}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="ml-3 flex-1 flex flex-col justify-center">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[16px] text-gray-900 tracking-wide">${displayName}</span>
+                                <span class="text-[12px] text-gray-400">刚刚</span>
+                            </div>
+                            <div class="text-[13px] text-gray-500 line-clamp-1 mt-0.5">点击进入聊天</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Extremely simple pinyin/initial grouping logic
+        function getFirstLetter(str) {
+            if (!str) return '#';
+            const char = str.charAt(0).toUpperCase();
+            if (/[A-Z]/.test(char)) return char;
+            // For Chinese, ideally use a Pinyin library. Here we do a crude fallback for demo
+            return '#'; // Put non-alphabet in #
+        }
+
+        function renderContactsList() {
+            const listDiv = document.getElementById('wechat-contacts-list');
+            listDiv.innerHTML = '';
+            
+            if (friendsData.length === 0) return;
+
+            // Map friend IDs to Char objects
+            const friends = friendsData.map(f => {
+                const char = charData.find(c => c.id === f.charId);
+                return {
+                    ...f,
+                    charName: char ? char.name : '未知角色',
+                    charAvatar: char ? (char.avatar || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=') : ''
+                };
+            });
+
+            // Group by first letter
+            const groups = {};
+            friends.forEach(f => {
+                const nameToUse = f.remark || f.charName;
+                const letter = getFirstLetter(nameToUse);
+                if (!groups[letter]) groups[letter] = [];
+                groups[letter].push(f);
+            });
+
+            // Sort keys
+            const sortedKeys = Object.keys(groups).sort((a, b) => {
+                if (a === '#') return 1;
+                if (b === '#') return -1;
+                return a.localeCompare(b);
+            });
+
+            sortedKeys.forEach(key => {
+                listDiv.innerHTML += `<div class="bg-[#ededed] px-4 py-1 text-[13px] text-gray-500 font-medium sticky top-0">${key}</div>`;
+                
+                // Sort within group
+                groups[key].sort((a, b) => (a.remark || a.charName).localeCompare(b.remark || b.charName)).forEach(f => {
+                    listDiv.innerHTML += `
+                        <div class="flex items-center px-4 py-2.5 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                            <div class="w-10 h-10 rounded-[6px] bg-gray-200 overflow-hidden shrink-0">
+                                <img src="${f.charAvatar}" class="w-full h-full object-cover">
+                            </div>
+                            <span class="ml-4 text-[16px] text-gray-900 tracking-wide">${f.remark || f.charName}</span>
+                        </div>
+                    `;
+                });
+            });
+            
+            listDiv.innerHTML += `<div class="py-6 text-center text-[15px] text-gray-400">${friendsData.length} 个朋友</div>`;
+        }
+
+        // Add Friend Flow
+        function openAddFriendPage() {
+            document.getElementById('wechat-add-menu').classList.add('hidden');
+            const container = document.getElementById('add-friend-list-container');
+            container.innerHTML = '';
+            
+            const availableChars = charData.filter(c => !friendsData.some(f => f.charId === c.id));
+            
+            if (availableChars.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 mt-10 text-[15px]">没有可添加的角色</div>';
+            } else {
+                availableChars.forEach(char => {
+                    const avatarSrc = char.avatar || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
+                    container.innerHTML += `
+                        <div class="flex items-center px-4 py-3 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer" onclick="addFriend(${char.id})">
+                            <div class="w-10 h-10 rounded-[6px] bg-gray-200 overflow-hidden shrink-0">
+                                <img src="${avatarSrc}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <div class="text-[16px] text-gray-900">${char.name || '未命名角色'}</div>
+                            </div>
+                            <button class="px-3 py-1 bg-[#07c160] text-white text-[13px] rounded">添加</button>
+                        </div>
+                    `;
+                });
+            }
+
+            const page = document.getElementById('wechat-add-friend-page');
+            page.classList.remove('hidden');
+            void page.offsetWidth;
+            page.classList.remove('translate-x-full');
+        }
+
+        function closeAddFriendPage() {
+            const page = document.getElementById('wechat-add-friend-page');
+            page.classList.add('translate-x-full');
+            setTimeout(() => page.classList.add('hidden'), 300);
+        }
+
+        function addFriend(charId) {
+            if (!friendsData.some(f => f.charId === charId)) {
+                friendsData.push({ charId, remark: '' });
+                saveFriendsData();
+                alert('添加成功！已加入通讯录。');
+                closeAddFriendPage();
+            }
+        }
+
+        // Create Group Flow
+        function openCreateGroupPage() {
+            document.getElementById('wechat-add-menu').classList.add('hidden');
+            const container = document.getElementById('create-group-list-container');
+            container.innerHTML = '';
+            
+            if (charData.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 mt-10 text-[15px]">暂无角色可选</div>';
+            } else {
+                charData.forEach((char, index) => {
+                    const avatarSrc = char.avatar || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
+                    container.innerHTML += `
+                        <label class="flex items-center px-4 py-3 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer">
+                            <div class="shrink-0 mr-4">
+                                <input type="checkbox" id="group-char-check-${char.id}" class="w-5 h-5 accent-[#07c160]">
+                            </div>
+                            <div class="w-10 h-10 rounded-[6px] bg-gray-200 overflow-hidden shrink-0">
+                                <img src="${avatarSrc}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="ml-4 flex-1 text-[16px] text-gray-900">${char.name || '未命名角色'}</div>
+                        </label>
+                    `;
+                });
+            }
+
+            const page = document.getElementById('wechat-create-group-page');
+            page.classList.remove('hidden');
+            void page.offsetWidth;
+            page.classList.remove('translate-x-full');
+        }
+
+        function closeCreateGroupPage() {
+            const page = document.getElementById('wechat-create-group-page');
+            page.classList.add('translate-x-full');
+            setTimeout(() => page.classList.add('hidden'), 300);
+        }
+
+        function submitCreateGroup() {
+            const selected = [];
+            charData.forEach(char => {
+                const cb = document.getElementById(`group-char-check-${char.id}`);
+                if (cb && cb.checked) selected.push(char.id);
+            });
+            
+            if (selected.length === 0) {
+                alert('请至少选择一个角色');
+                return;
+            }
+            
+            alert(`已发起包含 ${selected.length} 个角色的群聊！\n(群聊功能待完善)`);
+            closeCreateGroupPage();
+        }
+
+        // --- Char Management Logic ---
+        let charData = JSON.parse(localStorage.getItem('melancholic_chars') || '[]');
+        let charManageMode = false;
+        let currentCharEditId = null;
+
+        function saveCharData() {
+            localStorage.setItem('melancholic_chars', JSON.stringify(charData));
+        }
+
+        function openCharPage() {
+            charManageMode = false;
+            document.getElementById('char-menu-dropdown').classList.add('hidden');
+            renderCharList();
+            const page = document.getElementById('wechat-char-page');
+            page.classList.remove('hidden');
+            void page.offsetWidth;
+            page.classList.remove('translate-x-full');
+        }
+
+        function closeCharPage() {
+            const page = document.getElementById('wechat-char-page');
+            page.classList.add('translate-x-full');
+            setTimeout(() => page.classList.add('hidden'), 300);
+        }
+
+        function toggleCharMenu() {
+            document.getElementById('char-menu-dropdown').classList.toggle('hidden');
+        }
+
+        function renderCharList() {
+            const container = document.getElementById('char-list-container');
+            const footer = document.getElementById('char-manage-footer');
+            container.innerHTML = '';
+            
+            if (charData.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 mt-10 text-[15px]">暂无角色</div>';
+            } else {
+                charData.forEach((char, index) => {
+                    const avatarSrc = char.avatar || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
+                    
+                    let html = `
+                        <div class="flex items-center px-4 py-3 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer" onclick="${charManageMode ? `toggleCharSelect(${index})` : `openCharEditPage(${char.id})`}">
+                    `;
+                    
+                    if (charManageMode) {
+                        html += `
+                            <div class="shrink-0 mr-3">
+                                <input type="checkbox" id="char-check-${index}" class="w-5 h-5 accent-[#07c160] pointer-events-none">
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                            <div class="w-10 h-10 rounded-[6px] bg-gray-200 overflow-hidden shrink-0">
+                                <img src="${avatarSrc}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <div class="text-[16px] text-gray-900">${char.name || '未命名角色'}</div>
+                                <div class="text-[13px] text-gray-500 line-clamp-1">${char.info || ''}</div>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += html;
+                });
+            }
+
+            if (charManageMode) {
+                footer.classList.remove('hidden');
+                footer.classList.add('flex');
+            } else {
+                footer.classList.add('hidden');
+                footer.classList.remove('flex');
+            }
+        }
+
+        function toggleCharManageMode() {
+            charManageMode = !charManageMode;
+            document.getElementById('char-menu-dropdown').classList.add('hidden');
+            renderCharList();
+        }
+
+        function toggleCharSelect(index) {
+            const cb = document.getElementById(`char-check-${index}`);
+            if (cb) cb.checked = !cb.checked;
+        }
+
+        function deleteSelectedChars() {
+            if (confirm('确定删除所选角色吗？')) {
+                const checkboxes = document.querySelectorAll('input[id^="char-check-"]');
+                const indicesToRemove = [];
+                checkboxes.forEach((cb, index) => {
+                    if (cb.checked) indicesToRemove.push(index);
+                });
+                
+                indicesToRemove.reverse().forEach(idx => {
+                    charData.splice(idx, 1);
+                });
+                
+                saveCharData();
+                toggleCharManageMode();
+            }
+        }
+
+        function openCharEditPage(id = null) {
+            document.getElementById('char-menu-dropdown').classList.add('hidden');
+            currentCharEditId = id;
+            const isEdit = id !== null;
+            
+            document.getElementById('char-edit-title').innerText = isEdit ? '编辑角色' : '添加角色';
+            document.getElementById('char-delete-btn').classList.toggle('hidden', !isEdit);
+            
+            const preview = document.getElementById('char-avatar-preview');
+            const placeholder = document.getElementById('char-avatar-placeholder');
+            document.getElementById('char-avatar-upload').value = '';
+            document.getElementById('char-name-input').value = '';
+            document.getElementById('char-wechat-input').value = '';
+            document.getElementById('char-info-input').value = '';
+
+            if (isEdit) {
+                const char = charData.find(c => c.id === id);
+                if (char) {
+                    if (char.avatar) {
+                        preview.src = char.avatar;
+                        preview.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                    } else {
+                        preview.classList.add('hidden');
+                        placeholder.classList.remove('hidden');
+                    }
+                    document.getElementById('char-name-input').value = char.name || '';
+                    document.getElementById('char-wechat-input').value = char.wechatId || '';
+                    document.getElementById('char-info-input').value = char.info || '';
+                }
+            } else {
+                preview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+            }
+
+            const page = document.getElementById('wechat-char-edit-page');
+            page.classList.remove('hidden');
+            void page.offsetWidth;
+            page.classList.remove('translate-x-full');
+        }
+
+        function closeCharEditPage() {
+            const page = document.getElementById('wechat-char-edit-page');
+            page.classList.add('translate-x-full');
+            setTimeout(() => page.classList.add('hidden'), 300);
+        }
+
+        function previewCharAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('char-avatar-preview');
+                    const placeholder = document.getElementById('char-avatar-placeholder');
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function generateWechatId() {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let id = 'wxid_';
+            for (let i = 0; i < 8; i++) {
+                id += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('char-wechat-input').value = id;
+        }
+
+        function saveChar() {
+            const preview = document.getElementById('char-avatar-preview');
+            const avatar = !preview.classList.contains('hidden') ? preview.src : null;
+            const name = document.getElementById('char-name-input').value.trim();
+            const wechatId = document.getElementById('char-wechat-input').value.trim();
+            const info = document.getElementById('char-info-input').value.trim();
+
+            if (!name) {
+                alert('请输入角色名字');
+                return;
+            }
+
+            if (currentCharEditId !== null) {
+                const idx = charData.findIndex(c => c.id === currentCharEditId);
+                if (idx > -1) {
+                    charData[idx] = { ...charData[idx], avatar, name, wechatId, info };
+                }
+            } else {
+                charData.push({
+                    id: Date.now(),
+                    avatar,
+                    name,
+                    wechatId,
+                    info
+                });
+            }
+
+            saveCharData();
+            closeCharEditPage();
+            renderCharList();
+        }
+
+        function deleteCurrentChar() {
+            if (currentCharEditId !== null && confirm('确定删除该角色吗？')) {
+                charData = charData.filter(c => c.id !== currentCharEditId);
+                saveCharData();
+                closeCharEditPage();
+                renderCharList();
+            }
+        }
+
+        // --- Mask Management Logic ---
+        let maskData = JSON.parse(localStorage.getItem('melancholic_masks') || '[]');
+        let maskManageMode = false;
+        let currentMaskEditId = null;
+
+        function saveMaskData() {
+            localStorage.setItem('melancholic_masks', JSON.stringify(maskData));
+        }
+
+        function openMaskPage() {
+            maskManageMode = false;
+            document.getElementById('mask-menu-dropdown').classList.add('hidden');
+            renderMaskList();
+            const page = document.getElementById('wechat-mask-page');
+            page.classList.remove('hidden');
+            void page.offsetWidth;
+            page.classList.remove('translate-x-full');
+        }
+
+        function closeMaskPage() {
+            const page = document.getElementById('wechat-mask-page');
+            page.classList.add('translate-x-full');
+            setTimeout(() => page.classList.add('hidden'), 300);
+        }
+
+        function toggleMaskMenu() {
+            document.getElementById('mask-menu-dropdown').classList.toggle('hidden');
+        }
+
+        function renderMaskList() {
+            const container = document.getElementById('mask-list-container');
+            const footer = document.getElementById('mask-manage-footer');
+            container.innerHTML = '';
+            
+            if (maskData.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-400 mt-10 text-[15px]">暂无面具</div>';
+            } else {
+                maskData.forEach((mask, index) => {
+                    const avatarSrc = mask.avatar || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=';
+                    
+                    let html = `
+                        <div class="flex items-center px-4 py-3 border-b border-[#f0f0f0] active:bg-gray-100 transition cursor-pointer" onclick="${maskManageMode ? `toggleMaskSelect(${index})` : `openMaskEditPage(${mask.id})`}">
+                    `;
+                    
+                    if (maskManageMode) {
+                        html += `
+                            <div class="shrink-0 mr-3">
+                                <input type="checkbox" id="mask-check-${index}" class="w-5 h-5 accent-[#07c160] pointer-events-none">
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                            <div class="w-10 h-10 rounded-[6px] bg-gray-200 overflow-hidden shrink-0">
+                                <img src="${avatarSrc}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="ml-4 flex-1">
+                                <div class="text-[16px] text-gray-900">${mask.name || '未命名面具'}</div>
+                                <div class="text-[13px] text-gray-500 line-clamp-1">${mask.info || ''}</div>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += html;
+                });
+            }
+
+            if (maskManageMode) {
+                footer.classList.remove('hidden');
+                footer.classList.add('flex');
+            } else {
+                footer.classList.add('hidden');
+                footer.classList.remove('flex');
+            }
+        }
+
+        function toggleMaskManageMode() {
+            maskManageMode = !maskManageMode;
+            document.getElementById('mask-menu-dropdown').classList.add('hidden');
+            renderMaskList();
+        }
+
+        function toggleMaskSelect(index) {
+            const cb = document.getElementById(`mask-check-${index}`);
+            if (cb) cb.checked = !cb.checked;
+        }
+
+        function deleteSelectedMasks() {
+            if (confirm('确定删除所选面具吗？')) {
+                const checkboxes = document.querySelectorAll('input[id^="mask-check-"]');
+                const indicesToRemove = [];
+                checkboxes.forEach((cb, index) => {
+                    if (cb.checked) indicesToRemove.push(index);
+                });
+                
+                indicesToRemove.reverse().forEach(idx => {
+                    maskData.splice(idx, 1);
+                });
+                
+                saveMaskData();
+                toggleMaskManageMode();
+            }
+        }
+
+        function openMaskEditPage(id = null) {
+            document.getElementById('mask-menu-dropdown').classList.add('hidden');
+            currentMaskEditId = id;
+            const isEdit = id !== null;
+            
+            document.getElementById('mask-edit-title').innerText = isEdit ? '编辑面具' : '添加面具';
+            document.getElementById('mask-delete-btn').classList.toggle('hidden', !isEdit);
+            
+            const preview = document.getElementById('mask-avatar-preview');
+            const placeholder = document.getElementById('mask-avatar-placeholder');
+            document.getElementById('mask-avatar-upload').value = '';
+            document.getElementById('mask-name-input').value = '';
+            document.getElementById('mask-info-input').value = '';
+
+            if (isEdit) {
+                const mask = maskData.find(m => m.id === id);
+                if (mask) {
+                    if (mask.avatar) {
+                        preview.src = mask.avatar;
+                        preview.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                    } else {
+                        preview.classList.add('hidden');
+                        placeholder.classList.remove('hidden');
+                    }
+                    document.getElementById('mask-name-input').value = mask.name || '';
+                    document.getElementById('mask-info-input').value = mask.info || '';
+                }
+            } else {
+                preview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+            }
+
+            const page = document.getElementById('wechat-mask-edit-page');
+            page.classList.remove('hidden');
+            void page.offsetWidth;
+            page.classList.remove('translate-x-full');
+        }
+
+        function closeMaskEditPage() {
+            const page = document.getElementById('wechat-mask-edit-page');
+            page.classList.add('translate-x-full');
+            setTimeout(() => page.classList.add('hidden'), 300);
+        }
+
+        function previewMaskAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('mask-avatar-preview');
+                    const placeholder = document.getElementById('mask-avatar-placeholder');
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveMask() {
+            const preview = document.getElementById('mask-avatar-preview');
+            const avatar = !preview.classList.contains('hidden') ? preview.src : null;
+            const name = document.getElementById('mask-name-input').value.trim();
+            const info = document.getElementById('mask-info-input').value.trim();
+
+            if (!name) {
+                alert('请输入面具名字');
+                return;
+            }
+
+            if (currentMaskEditId !== null) {
+                const idx = maskData.findIndex(m => m.id === currentMaskEditId);
+                if (idx > -1) {
+                    maskData[idx] = { ...maskData[idx], avatar, name, info };
+                }
+            } else {
+                maskData.push({
+                    id: Date.now(),
+                    avatar,
+                    name,
+                    info
+                });
+            }
+
+            saveMaskData();
+            closeMaskEditPage();
+            renderMaskList();
+        }
+
+        function deleteCurrentMask() {
+            if (currentMaskEditId !== null && confirm('确定删除该面具吗？')) {
+                maskData = maskData.filter(m => m.id !== currentMaskEditId);
+                saveMaskData();
+                closeMaskEditPage();
+                renderMaskList();
+            }
+        }
+
+        // Initialize contacts on load
+        renderContactsList();
+        renderChatList();
+
+        function importAllData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const backup = JSON.parse(e.target.result);
+                    
+                    // Restore localStorage
+                    for (const key in backup) {
+                        if (key.startsWith('melancholic_')) {
+                            localStorage.setItem(key, backup[key]);
+                        }
+                    }
+
+                    // Reload modules
+                    if (typeof loadProfileData === 'function') loadProfileData();
+                    
+                    themeData = JSON.parse(localStorage.getItem('melancholic_theme') || '{"wallpaper": null, "apps": {}}');
+                    applyThemeData();
+
+                    charData = JSON.parse(localStorage.getItem('melancholic_chars') || '[]');
+                    friendsData = JSON.parse(localStorage.getItem('melancholic_friends') || '[]');
+                    renderContactsList();
+                    renderChatList();
+                    
+                    maskData = JSON.parse(localStorage.getItem('melancholic_masks') || '[]');
+
+                    meProfileData = JSON.parse(localStorage.getItem('melancholic_me_profile') || JSON.stringify({
+                        avatar: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=',
+                        name: '用户',
+                        wechatId: '12345Q',
+                        tickle: '',
+                        gender: '其他',
+                        region: '',
+                        signature: '',
+                        mask: ''
+                    }));
+                    applyMeProfileData();
+                    
+                    rawSchedules = JSON.parse(localStorage.getItem('melancholic_schedules') || '{}');
+                    schedules = {};
+                    for (let date in rawSchedules) {
+                        if (typeof rawSchedules[date] === 'string') {
+                            let lines = rawSchedules[date].split('\n').filter(l => l.trim() !== '');
+                            schedules[date] = lines.map((text, idx) => ({ id: Date.now() + idx, emoji: '📌', text: text }));
+                        } else {
+                            schedules[date] = rawSchedules[date];
+                        }
+                    }
+                    updateWidget();
+                    
+                    alert("档案导入成功！");
+                } catch (err) {
+                    alert("导入失败，档案格式错误：" + err.message);
+                }
+                event.target.value = ''; // Reset file input
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
